@@ -1,0 +1,6 @@
+aiogram==3.13.1
+aioschedule
+aiomysql
+sqlalchemy[asyncio]
+python-dotenv
+telethon

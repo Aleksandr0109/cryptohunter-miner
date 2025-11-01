@@ -1,0 +1,8 @@
+Metadata-Version: 2.4
+Name: cryptohunter_bot
+Version: 0.1.0
+Summary: CryptoHunter Miner Bot
+Requires-Dist: aiogram==3.13.1
+Requires-Dist: sqlalchemy[asyncio]==2.0.35
+Requires-Dist: aiomysql==0.2.0
+Requires-Dist: python-dotenv==1.0.1

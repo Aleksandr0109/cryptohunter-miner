@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CryptoHunter Miner</title>
+  <link rel="stylesheet" href="/webapp/style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+</head>
+<body>
+  <div class="container">
+    <!-- СТАТИСТИКА -->
+    <div id="stats" class="section">
+      <h2>MINER</h2>
+      <img src="/webapp/assets/mining.gif" alt="Mining" class="mining-gif" />
+      <p>Баланс: <b id="balance">0.0000</b> TON</p>
+      <p>Инвестировано: <b id="invested">0</b> TON</p>
+      <p>Заработано: <b id="earned">0</b> TON</p>
+      <p>Скорость: <b id="speed">0</b>%</p>
+      <div class="buttons">
+        <button onclick="showSection('stats')">Статистика</button>
+        <button onclick="showSection('calc')">Калькулятор</button>
+        <button onclick="showSection('invest')">Инвестировать</button>
+        <button onclick="showSection('withdraw')">Вывод</button>
+        <button onclick="showSection('referral')">Рефералка</button>
+      </div>
+    </div>
+
+    <!-- КАЛЬКУЛЯТОР -->
+    <div id="calc" class="section" style="display:none">
+      <h2>Калькулятор</h2>
+      <input type="number" id="calc-amount" placeholder="Сумма (TON)" min="1" />
+      <button onclick="calculate()">Рассчитать</button>
+      <div id="calc-result"></div>
+      <button onclick="showSection('stats')">Назад</button>
+    </div>
+
+    <!-- ИНВЕСТИРОВАТЬ -->
+    <div id="invest" class="section" style="display:none">
+      <h2>Инвестировать</h2>
+      <input type="number" id="invest-amount" placeholder="Мин. 1 TON" min="1" />
+      <button onclick="generateQR()">Создать QR</button>
+      <div id="qr-container" style="display:none; text-align:center; margin:20px 0">
+        <canvas id="qr-canvas"></canvas>
+      </div>
+      <button onclick="showSection('stats')">Назад</button>
+    </div>
+
+    <!-- ВЫВОД -->
+    <div id="withdraw" class="section" style="display:none">
+      <h2>Вывод</h2>
+      <input type="text" id="withdraw-address" placeholder="kQ..." />
+      <button onclick="withdraw()">Вывести</button>
+      <p id="withdraw-status" style="margin-top:10px"></p>
+      <button onclick="showSection('stats')">Назад</button>
+    </div>
+
+    <!-- РЕФЕРАЛКА -->
+    <div id="referral" class="section" style="display:none">
+      <h2>Рефералка</h2>
+      <p>Приглашай друзей — получай бонусы!</p>
+      <p>Твоя ссылка:</p>
+      <p id="ref-link" class="link">Загрузка...</p>
+      <button onclick="copyLink()">Копировать</button>
+      <button onclick="showSection('stats')">Назад</button>
+    </div>
+  </div>
+
+  <script src="/webapp/script.js"></script>
+</body>
+</html>
