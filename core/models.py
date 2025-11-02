@@ -1,4 +1,4 @@
-# core/models.py — v1.1 ГОТОВ К РАССЫЛКЕ И АДМИНКЕ
+# core/models.py — v1.2 С ДОБАВЛЕННЫМИ ПОЛЯМИ ДЛЯ MINI-APP
 from sqlalchemy import (
     Column, BigInteger, String, DECIMAL, TIMESTAMP, Integer,
     func, Text, Boolean, ForeignKey
@@ -29,6 +29,10 @@ class User(Base):
     status = Column(String(20), default='active')
     language = Column(String(10), default='ru')
     notifications = Column(Boolean, default=True)
+
+    # === ДОБАВЛЕННЫЕ ПОЛЯ ДЛЯ MINI-APP ===
+    pending_deposit = Column(DECIMAL(15,6), nullable=True)
+    pending_address = Column(String(255), nullable=True)
 
     referrals = relationship("Referral", back_populates="referrer", foreign_keys="Referral.referrer_id")
     referred_by = relationship("Referral", back_populates="referred", foreign_keys="Referral.referred_id", uselist=False)
@@ -79,7 +83,7 @@ class Lead(Base):
             self.interest_keywords = '[]'
 
 
-# === TRANSACTION (ТОЛЬКО ОДИН!) ===
+# === TRANSACTION ===
 class Transaction(Base):
     __tablename__ = "transactions"
     

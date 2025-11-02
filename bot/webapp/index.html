@@ -1,71 +1,262 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>CryptoHunter Miner</title>
-  <link rel="stylesheet" href="/webapp/style.css" />
-  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CryptoHunter Miner</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
 </head>
 <body>
-  <div class="container">
-    <!-- СТАТИСТИКА -->
-    <div id="stats" class="section">
-      <h2>MINER</h2>
-      <img src="/webapp/assets/mining.gif" alt="Mining" class="mining-gif" />
-      <p>Баланс: <b id="balance">0.0000</b> TON</p>
-      <p>Инвестировано: <b id="invested">0</b> TON</p>
-      <p>Заработано: <b id="earned">0</b> TON</p>
-      <p>Скорость: <b id="speed">0</b>%</p>
-      <div class="buttons">
-        <button onclick="showSection('stats')">Статистика</button>
-        <button onclick="showSection('calc')">Калькулятор</button>
-        <button onclick="showSection('invest')">Инвестировать</button>
-        <button onclick="showSection('withdraw')">Вывод</button>
-        <button onclick="showSection('referral')">Рефералка</button>
-      </div>
+    <div class="container">
+        <!-- ЗАГОЛОВОК И ПЕРЕКЛЮЧАТЕЛЬ ЯЗЫКА -->
+        <div class="header">
+            <h1>CryptoHunter</h1>
+            <div class="language-switcher">
+                <button id="lang-ru" class="lang-btn active" onclick="changeLanguage('ru')">RU</button>
+                <button id="lang-en" class="lang-btn" onclick="changeLanguage('en')">ENG</button>
+            </div>
+        </div>
+        
+        <!-- ГЛАВНЫЙ ЭКРАН -->
+        <div id="stats" class="section active">
+            <!-- ГИФКА МАЙНИНГА -->
+            <img src="/webapp/assets/mining.gif" alt="Mining" class="mining-gif">
+            
+            <!-- ВЕРХНИЕ КНОПКИ -->
+            <div class="top-actions">
+                <button onclick="showSection('invest')" class="action-btn invest">
+                    <img src="/webapp/assets/deposit.png" alt="Инвестировать" style="width: 24px; height: 24px;">
+                    <span data-i18n="invest">Инвестировать</span>
+                </button>
+                <button onclick="showSection('withdraw')" class="action-btn withdraw">
+                    <img src="/webapp/assets/withdraw.png" alt="Вывод" style="width: 24px; height: 24px;">
+                    <span data-i18n="withdraw">Вывод</span>
+                </button>
+            </div>
+            
+            <!-- КАРТОЧКА БАЛАНСА -->
+            <div class="balance-card">
+                <p data-i18n="your_balance">ВАШ БАЛАНС</p>
+                <h2 id="balance">0.0000</h2>
+                <p>TON</p>
+            </div>
+            
+            <!-- СТАТИСТИКА -->
+            <div class="stats-grid">
+                <div class="stat">
+                    <p data-i18n="invested">Инвестировано</p>
+                    <b id="invested">0.00</b>
+                </div>
+                <div class="stat">
+                    <p data-i18n="earned">Заработано</p>
+                    <b id="earned">0.0000</b>
+                </div>
+                <div class="stat">
+                    <p data-i18n="speed">Скорость</p>
+                    <b id="speed">100%</b>
+                </div>
+            </div>
+            
+            <!-- НАВИГАЦИЯ -->
+            <div class="nav-buttons">
+                <button onclick="showSection('dashboard')" class="nav-btn">
+                    <img src="/webapp/assets/stats.png" alt="Статистика" style="width: 18px; height: 18px;">
+                    <span data-i18n="detailed_stats">Детальная статистика</span>
+                </button>
+                <button onclick="showSection('referral')" class="nav-btn">
+                    <img src="/webapp/assets/referral.png" alt="Рефералы" style="width: 18px; height: 18px;">
+                    <span data-i18n="referral_program">Реферальная программа</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- ДЕТАЛЬНАЯ СТАТИСТИКА -->
+        <div id="dashboard" class="section">
+            <div class="card">
+                <h2>📊 <span data-i18n="detailed_stats">Детальная статистика</span></h2>
+                
+                <div class="stats-section">
+                    <h3>💎 <span data-i18n="investments">ИНВЕСТИЦИИ</span></h3>
+                    <div class="stat-row">
+                        <span data-i18n="amount">Сумма:</span>
+                        <b id="dash-invested">0.00 TON</b>
+                    </div>
+                    <div class="stat-row">
+                        <span data-i18n="day">День:</span>
+                        <b id="dash-daily-inv">0.000 TON</b>
+                    </div>
+                    <div class="stat-row">
+                        <span data-i18n="week">Неделя:</span>
+                        <b id="dash-weekly-inv">0.000 TON</b>
+                    </div>
+                    <div class="stat-row">
+                        <span data-i18n="month">Месяц:</span>
+                        <b id="dash-monthly-inv">0.00 TON</b>
+                    </div>
+                </div>
+
+                <div class="stats-section">
+                    <h3>⚡ <span data-i18n="free_mining">БЕСПЛАТНЫЙ МАЙНИНГ</span></h3>
+                    <div class="stat-row">
+                        <span data-i18n="speed">Скорость:</span>
+                        <b id="dash-speed">100%</b>
+                    </div>
+                    <div class="stat-row">
+                        <span data-i18n="day">День:</span>
+                        <b id="dash-daily-free">0.0000 TON</b>
+                    </div>
+                    <div class="stat-row">
+                        <span data-i18n="ton_per_days">1 TON за:</span>
+                        <b id="dash-days-per-ton">0.0 дней</b>
+                    </div>
+                    <div class="stat-row">
+                        <span data-i18n="accumulated">Накоплено:</span>
+                        <b id="dash-accumulated">0.00 TON</b>
+                    </div>
+                </div>
+
+                <div class="stats-section">
+                    <h3>💰 <span data-i18n="currently_earning">СЕЙЧАС НАЧИСЛЯЕТСЯ</span></h3>
+                    <div class="stat-row">
+                        <span data-i18n="per_day">В день:</span>
+                        <b id="dash-total-daily">0.0000 TON</b>
+                    </div>
+                    <div class="stat-row">
+                        <span data-i18n="per_hour">В час:</span>
+                        <b id="dash-hourly">0.0000 TON</b>
+                    </div>
+                </div>
+
+                <div class="stats-section">
+                    <h3>📤 <span data-i18n="withdraw">Вывод</span></h3>
+                    <div class="stat-row">
+                        <span id="dash-withdraw-status">- <span data-i18n="not_ready">Не готово</span></span>
+                    </div>
+                    <div class="stat-row">
+                        <span id="dash-min-withdraw" data-i18n="min_withdraw">Минимум: 1 TON (1.00 TON осталось)</span>
+                    </div>
+                </div>
+            </div>
+            
+            <button onclick="showSection('stats')" class="btn back">← <span data-i18n="back">Назад</span></button>
+        </div>
+
+        <!-- РЕФЕРАЛЬНАЯ ПРОГРАММА -->
+        <div id="referral" class="section">
+            <div class="card">
+                <h2>👥 <span data-i18n="referral_program">Реферальная программа</span></h2>
+                
+                <div class="ref-stats">
+                    <div class="ref-stat">
+                        <div class="ref-stat-value" id="ref-direct">0</div>
+                        <div class="ref-stat-label" data-i18n="direct_referrals">прямых рефералов</div>
+                    </div>
+                    <div class="ref-stat">
+                        <div class="ref-stat-value" id="ref-level2">0</div>
+                        <div class="ref-stat-label" data-i18n="level_2">2-й уровень</div>
+                    </div>
+                    <div class="ref-stat">
+                        <div class="ref-stat-value" id="ref-income">0.00</div>
+                        <div class="ref-stat-label" data-i18n="earned_ton">Заработано TON</div>
+                    </div>
+                </div>
+
+                <div class="ref-link-container">
+                    <p data-i18n="your_referral_link">Ваша реферальная ссылка:</p>
+                    <div class="ref-link-box" id="ref-link">https://t.me/cruptos023bot?start=ref_123</div>
+                    <button onclick="copyLink()" class="btn copy-btn">📋 <span data-i18n="copy_link">Скопировать ссылку</span></button>
+                </div>
+            </div>
+            
+            <button onclick="showSection('stats')" class="btn back">← <span data-i18n="back">Назад</span></button>
+        </div>
+
+        <!-- ИНВЕСТИРОВАНИЕ -->
+        <div id="invest" class="section">
+            <div class="card">
+                <h2>💎 <span data-i18n="investing">Инвестирование</span></h2>
+                
+                <div class="input-group">
+                    <label data-i18n="investment_amount">Сумма инвестиции (TON):</label>
+                    <input type="number" id="invest-amount" class="input-field" data-i18n-placeholder="min_ton" placeholder="Минимум 1 TON" min="1">
+                </div>
+                
+                <button onclick="generateQR()" class="btn big-btn">💰 <span data-i18n="generate_qr">Сгенерировать QR для оплаты</span></button>
+                
+                <!-- QR СЕКЦИЯ -->
+                <div id="qr-section" style="display:none; text-align:center; margin-top:20px;">
+                  <p data-i18n="scan_qr">Отсканируйте QR-код для оплаты:</p>
+                  <img id="qr-img" alt="QR Code" width="220" style="border:1px solid #ccc; border-radius:12px; padding:6px;">
+                  <p style="margin-top:10px;" data-i18n="ton_address">Адрес TON:</p>
+                  <p id="qr-address" style="font-size:0.9em; word-break:break-all; color:#555;"></p>
+                  <button id="copyAddressBtn" style="margin-top:8px; padding:5px 10px;" data-i18n="copy_address">Скопировать адрес</button>
+                </div>
+                
+                <!-- КАЛЬКУЛЯТОР -->
+                <div class="calculator">
+                    <h3>📈 <span data-i18n="profit_calculator">Калькулятор доходности</span></h3>
+                    <div class="input-group">
+                        <label data-i18n="amount_for_calc">Сумма для расчета:</label>
+                        <input type="number" id="calc-amount" class="input-field" data-i18n-placeholder="enter_amount" placeholder="Введите сумму" min="1">
+                    </div>
+                    <button onclick="calculate()" class="btn">🧮 <span data-i18n="calculate_profit">Рассчитать доходность</span></button>
+                    
+                    <div class="calc-results" id="calc-result">
+                        <div class="calc-result-item">
+                            <span data-i18n="day">День:</span>
+                            <b id="calc-daily">0.0000 TON</b>
+                        </div>
+                        <div class="calc-result-item">
+                            <span data-i18n="month">Месяц:</span>
+                            <b id="calc-monthly">0.0000 TON</b>
+                        </div>
+                        <div class="calc-result-item">
+                            <span data-i18n="year">Год:</span>
+                            <b id="calc-yearly">0.0000 TON</b>
+                        </div>
+                        <div class="calc-result-item">
+                            <span data-i18n="investment_bonus">Бонус за инвестицию:</span>
+                            <b id="calc-bonus">+0.00 TON</b>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <button onclick="showSection('stats')" class="btn back">← <span data-i18n="back">Назад</span></button>
+        </div>
+
+        <!-- ВЫВОД -->
+        <div id="withdraw" class="section">
+            <div class="card">
+                <h2>📤 <span data-i18n="withdraw_funds">Вывод средств</span></h2>
+                
+                <div class="balance-info">
+                    <p data-i18n="available_for_withdraw">Доступно для вывода: <b id="withdraw-available">0.0000</b> TON</p>
+                </div>
+                
+                <div class="input-group">
+                    <label data-i18n="ton_wallet_address">Адрес TON кошелька:</label>
+                    <input type="text" id="withdraw-address" class="input-field" data-i18n-placeholder="wallet_placeholder" placeholder="Начинается с kQ, UQ или EQ">
+                </div>
+                
+                <div class="input-group">
+                    <label data-i18n="withdraw_amount">Сумма вывода (TON):</label>
+                    <input type="number" id="withdraw-amount" class="input-field" data-i18n-placeholder="min_ton" placeholder="Минимум 1 TON" min="1">
+                </div>
+                
+                <button onclick="withdraw()" class="btn big-btn">🚀 <span data-i18n="withdraw_funds">Вывести средства</span></button>
+                
+                <div id="withdraw-status" class="status-message"></div>
+            </div>
+            
+            <button onclick="showSection('stats')" class="btn back">← <span data-i18n="back">Назад</span></button>
+        </div>
     </div>
 
-    <!-- КАЛЬКУЛЯТОР -->
-    <div id="calc" class="section" style="display:none">
-      <h2>Калькулятор</h2>
-      <input type="number" id="calc-amount" placeholder="Сумма (TON)" min="1" />
-      <button onclick="calculate()">Рассчитать</button>
-      <div id="calc-result"></div>
-      <button onclick="showSection('stats')">Назад</button>
-    </div>
+    <!-- УВЕДОМЛЕНИЯ -->
+    <div id="notification" class="notification"></div>
 
-    <!-- ИНВЕСТИРОВАТЬ -->
-    <div id="invest" class="section" style="display:none">
-      <h2>Инвестировать</h2>
-      <input type="number" id="invest-amount" placeholder="Мин. 1 TON" min="1" />
-      <button onclick="generateQR()">Создать QR</button>
-      <div id="qr-container" style="display:none; text-align:center; margin:20px 0">
-        <canvas id="qr-canvas"></canvas>
-      </div>
-      <button onclick="showSection('stats')">Назад</button>
-    </div>
-
-    <!-- ВЫВОД -->
-    <div id="withdraw" class="section" style="display:none">
-      <h2>Вывод</h2>
-      <input type="text" id="withdraw-address" placeholder="kQ..." />
-      <button onclick="withdraw()">Вывести</button>
-      <p id="withdraw-status" style="margin-top:10px"></p>
-      <button onclick="showSection('stats')">Назад</button>
-    </div>
-
-    <!-- РЕФЕРАЛКА -->
-    <div id="referral" class="section" style="display:none">
-      <h2>Рефералка</h2>
-      <p>Приглашай друзей — получай бонусы!</p>
-      <p>Твоя ссылка:</p>
-      <p id="ref-link" class="link">Загрузка...</p>
-      <button onclick="copyLink()">Копировать</button>
-      <button onclick="showSection('stats')">Назад</button>
-    </div>
-  </div>
-
-  <script src="/webapp/script.js"></script>
+    <script src="script.js"></script>
 </body>
 </html>

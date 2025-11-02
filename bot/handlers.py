@@ -1,4 +1,4 @@
-# bot/handlers.py — v4.0: ТОЛЬКО /start + /admin
+# bot/handlers.py — v4.0: ТОЛЬКО /start + УМНЫЕ НАПОМИНАНИЯ
 from aiogram import Router, F
 from aiogram.filters import Command
 from aiogram.types import Message
@@ -59,22 +59,43 @@ async def start(message: Message, state: FSMContext):
             parse_mode="Markdown"
         )
 
-        # Убрано: напоминание через час
-        # await asyncio.sleep(3600)
-        # await message.answer("Посчитай доход с 200 TON: /calculator")
+        # === УМНЫЕ НАПОМИНАНИЯ ===
+        asyncio.create_task(send_reminders(message))
 
-
-# === АДМИНКА (ОСТАЁТСЯ В ЧАТЕ) ===
-@router.message(Command("admin"))
-async def admin_panel(message: Message):
-    ADMIN_ID = 123456789  # ← ЗАМЕНИ НА СВОЙ
-    if message.from_user.id != ADMIN_ID:
-        return await message.answer("Доступ запрещён.")
-
-    await message.answer(
-        "Админ-панель:\n"
-        "/stats — статистика\n"
-        "/broadcast — рассылка\n"
-        "/leads — лиды",
-        reply_markup=main_menu()  # или отдельная админская клавиатура
-    )
+async def send_reminders(message: Message):
+    """Отправка напоминаний пользователю"""
+    try:
+        # Первое напоминание через 1 час
+        await asyncio.sleep(3600)  # 1 час
+        await message.answer(
+            "💎 *Напомню о возможностях:*\n"
+            "• Майнинг 25% в месяц\n" 
+            "• Рефералы: 5% с депозитов\n"
+            "• Бесплатный доход каждый день\n\n"
+            "Открыть майнер:",
+            reply_markup=main_menu(),
+            parse_mode="Markdown"
+        )
+        
+        # Второе напоминание через 3 часа
+        await asyncio.sleep(7200)  # +2 часа = 3 часа от старта
+        await message.answer(
+            "🚀 *Проверь свой баланс!*\n"
+            "Ты уже мог заработать первые TON\n\n"
+            "Открыть майнер и проверить:",
+            reply_markup=main_menu(),
+            parse_mode="Markdown"
+        )
+        
+        # Третье напоминание через 24 часа
+        await asyncio.sleep(75600)  # +21 час = 24 часа от старта
+        await message.answer(
+            "⏰ *Ежедневный бонус ждет!*\n"
+            "Заходи каждый день для бесплатного майнинга\n\n"
+            "Забрать бонус:",
+            reply_markup=main_menu(),
+            parse_mode="Markdown"
+        )
+            
+    except Exception as e:
+        print(f"Ошибка в напоминаниях: {e}")

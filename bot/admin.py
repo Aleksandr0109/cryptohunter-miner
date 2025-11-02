@@ -4,7 +4,7 @@ import csv
 import logging
 from datetime import datetime
 from pathlib import Path
-
+import os
 from aiogram import Router, F
 from aiogram.types import Message, CallbackQuery, FSInputFile
 from aiogram.filters import Command
@@ -19,7 +19,7 @@ from sqlalchemy import select, func
 from decimal import Decimal
 
 # === КОНФИГУРАЦИЯ ===
-ADMIN_ID = 8089114323
+ADMIN_ID = int(os.getenv("ADMIN_ID"))
 logger = logging.getLogger(__name__)
 router = Router()
 

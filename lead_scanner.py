@@ -1,4 +1,4 @@
-# lead_scanner.py — v2.3 — ПОЛНОСТЬЮ ИСПРАВЛЕННАЯ ВЕРСИЯ
+# lead_scanner.py — v2.5 — РАСШИРЕННАЯ ВЕРСИЯ С КОНКРЕТНЫМИ СЛОВАМИ И КАТЕГОРИЯМИ
 import os
 import asyncio
 import logging
@@ -45,10 +45,49 @@ PREDEFINED_CHANNELS = [
     "cryptohunter", "cryptosignal", "cryptoworld", "cryptolife"
 ]
 
-TON_KEYWORDS = ["TON", "ТОН", "TONCOIN", "THEOPENNETWORK"]
-INVEST_KEYWORDS = ["ИНВЕСТИЦИИ", "ВЛОЖЕНИЯ", "ДОХОД", "INVEST", "INVESTMENT", "INCOME", "ПРИБЫЛЬ"]
-MINING_KEYWORDS = ["МАЙНИНГ", "ФЕРМА", "НАЧИСЛЕНИЯ", "MINING", "EARN", "ЗАРАБОТОК"]
-LOSS_KEYWORDS = ["ПОТЕРЯЛ", "СЛИЛ", "ОБМАН", "SCAM", "LOST", "ПРОИГРАЛ", "УБЫТОК"]
+# === РАСШИРЕННЫЕ КЛЮЧЕВЫЕ СЛОВА ===
+
+# Базовые крипто-термины (15 баллов)
+CRYPTO_BASIC_KEYWORDS = [
+    "КРИПТОВАЛЮТА", "CRYPTO", "CRYPTOCURRENCY", "БИТКОИН", "BITCOIN", "BTC", 
+    "АЛЬТКОИН", "ALTCOIN", "АЛЬТКОИНЫ", "ALTS", "БЛОКЧЕЙН", "BLOCKCHAIN",
+    "NFT", "НФТ", "СТЕЙКИНГ", "STAKING", "СТЕЙБЛКОИН", "STABLECOIN",
+    "ЭФИРИУМ", "ETHEREUM", "ETH", "SOLANA", "SOL", "CARDANO", "ADA",
+    "POLKADOT", "DOT", "DOGECOIN", "DOGE", "LITECOIN", "LTC", "RIPPLE", "XRP"
+]
+
+# TON экосистема (25 баллов)  
+TON_ECOSYSTEM_KEYWORDS = [
+    "TONCOIN", "TON", "ТОН", "THEOPENNETWORK", "TON WALLET", "TON КОШЕЛЕК",
+    "TONKEEPER", "TON SPACE", "TON DEFI", "TON DNS", "TON APPS", "TON APPLICATIONS",
+    "TON FOUNDATION", "TON EXPLORER", "TONSCAN", "TONVIEWER", "GETGEMS",
+    "TON BRIDGE", "TON STAKING", "TON STAKING", "TON SWAP", "TON DEX"
+]
+
+# Финансы и инвестиции (20 баллов)
+FINANCE_KEYWORDS = [
+    "ИНВЕСТИЦИИ", "ВЛОЖЕНИЯ", "ДОХОД", "INVEST", "INVESTMENT", "INCOME", "ПРИБЫЛЬ",
+    "ТРЕЙДИНГ", "TRADING", "ТРЕЙДЕР", "TRADER", "CEX", "DEX", "БИРЖА", "EXCHANGE",
+    "КРИПТОБИРЖА", "BINANCE", "BYBIT", "KUCOIN", "OKX", "GATEIO", "HUOBI",
+    "WHITEBIT", "MEXC", "BITGET", "ПОРТФЕЛЬ", "PORTFOLIO", "ДИВИДЕНДЫ", "DIVIDENDS"
+]
+
+# Майнинг (30 баллов - самый высокий!)
+MINING_KEYWORDS = [
+    "МАЙНИНГ", "ФЕРМА", "НАЧИСЛЕНИЯ", "MINING", "EARN", "ЗАРАБОТОК", "ДОБЫЧА",
+    "HASH", "ХЭШ", "МАЙНИТЬ", "МАЙНЕР", "MINER", "МАЙНИНГ ФЕРМА", "MINING FARM",
+    "ASIC", "АСИК", "VIDEOCARD", "ВИДЕОКАРТА", "GPU", "РИГ", "RIG", "ПУЛ", "POOL",
+    "HASHRATE", "ХЭШРЕЙТ", "CLOUD MINING", "ОБЛАЧНЫЙ МАЙНИНГ"
+]
+
+# Жалобы и проблемы (25 баллов)
+LOSS_KEYWORDS = [
+    "ПОТЕРЯЛ", "СЛИЛ", "ОБМАН", "SCAM", "LOST", "ПРОИГРАЛ", "УБЫТОК", "МОШЕННИК",
+    "FRAUD", "ОБМАНУЛИ", "УКРАЛИ", "STOLEN", "HACK", "ВЗЛОМ", "ПРОБЛЕМА", "ПРОБЛЕМЫ",
+    "ISSUE", "ERROR", "ОШИБКА", "НЕ РАБОТАЕТ", "NOT WORKING", "КИДАНУЛИ", "ОБМАНУЛИ",
+    "ВОРЫ", "THIEF", "УКРАЛИ ДЕНЬГИ", "НЕ ВЫВОДЯТ", "ЗАБЛОКИРОВАЛИ", "BLOCKED",
+    "ЗАМОРОЗИЛИ", "FROZEN", "ПОДДЕЛЬНЫЙ", "FAKE", "ЛОХОТРОН", "ПИРАМИДА", "PYRAMID"
+]
 
 # === Проверка базы ===
 async def check_database_structure():
@@ -108,7 +147,8 @@ async def search_new_channels_in_dialogs(predefined_channels):
                         'blockchain', 'btc', 'eth', 'bitcoin', 'ethereum', 'трейд',
                         'trade', 'coin', 'монета', 'финанс', 'finance', 'деньги', 
                         'money', 'доход', 'earn', 'профит', 'profit', 'mining',
-                        'nft', 'defi', 'web3', 'трейдер', 'trader', 'бирж'
+                        'nft', 'defi', 'web3', 'трейдер', 'trader', 'бирж',
+                        'staking', 'стейкинг', 'wallet', 'кошелек', 'altcoin', 'альткоин'
                     ]
                     title_lower = title.lower()
                     
@@ -135,12 +175,14 @@ async def search_channels_globally(predefined_channels):
         logger.info("Ищем каналы через глобальный поиск...")
         
         search_keywords = [
-            'TON', 'Toncoin', 'Биткоин', 'Bitcoin', 'BTC', 'Эфириум', 'Ethereum', 'ETH',
+            'TON', 'Toncoin', 'TON Wallet', 'Tonkeeper', 'TON DeFi', 'TON DNS',
+            'Биткоин', 'Bitcoin', 'BTC', 'Эфириум', 'Ethereum', 'ETH',
             'Криптовалюта', 'Cryptocurrency', 'Crypto', 'Крипта',
             'Blockchain', 'Блокчейн', 'Web3', 'DeFi', 'NFT', 'Майнинг', 'Mining',
             'Инвестиции', 'Investment', 'Трейдинг', 'Trading', 'Биржа', 'Binance',
-            'The Open Network', 'TON Foundation', 'Tonkeeper', 'Getgems',
-            'Крипто', 'Криптомир', 'Аирдроп', 'Staking', 'Альткоин'
+            'The Open Network', 'TON Foundation', 'Getgems', 'TON Space',
+            'Крипто', 'Криптомир', 'Аирдроп', 'Staking', 'Альткоин', 'CEX', 'DEX',
+            'Stablecoin', 'Стейблкоин', 'Altcoin', 'Альткоины'
         ]
         
         for keyword in search_keywords:
@@ -154,7 +196,12 @@ async def search_channels_globally(predefined_channels):
                         username = chat.username.lower()
                         if username not in predefined_usernames:
                             title_lower = chat.title.lower()
-                            crypto_keywords = ['ton', 'crypto', 'майнинг', 'инвест', 'биткоин', 'blockchain']
+                            crypto_keywords = [
+                                'ton', 'crypto', 'майнинг', 'инвест', 'биткоин', 'blockchain',
+                                'btc', 'eth', 'nft', 'defi', 'web3', 'трейд', 'trade', 'бирж',
+                                'wallet', 'кошелек', 'staking', 'стейкинг', 'mining', 'альткоин',
+                                'altcoin', 'bitcoin', 'ethereum', 'финанс', 'finance'
+                            ]
                             if any(k in title_lower for k in crypto_keywords):
                                 channel_info = {
                                     "id": chat.id,
@@ -183,22 +230,47 @@ async def search_channels_globally(predefined_channels):
     
     return found_channels
 
-# === Оценка интереса ===
+# === ОБНОВЛЕННАЯ ФУНКЦИЯ ОЦЕНКИ ИНТЕРЕСА ===
 async def calculate_interest_score(text: str):
     score = 0
-    keywords = []
+    found_keywords = []  # Здесь будут и КАТЕГОРИИ и КОНКРЕТНЫЕ слова
     upper = text.upper()
 
-    if any(k in upper for k in TON_KEYWORDS):
-        score += 20; keywords.append("TON")
-    if any(k in upper for k in INVEST_KEYWORDS):
-        score += 15; keywords.append("инвестиции")
-    if any(k in upper for k in MINING_KEYWORDS):
-        score += 30; keywords.append("майнинг")
-    if any(k in upper for k in LOSS_KEYWORDS):
-        score += 25; keywords.append("жалобы")
+    # Словари для категорий
+    category_keywords = {
+        "крипто": CRYPTO_BASIC_KEYWORDS,
+        "TON": TON_ECOSYSTEM_KEYWORDS, 
+        "финансы": FINANCE_KEYWORDS,
+        "майнинг": MINING_KEYWORDS,
+        "жалобы": LOSS_KEYWORDS
+    }
 
-    return score, keywords
+    # Проверяем каждую категорию
+    for category, keywords_list in category_keywords.items():
+        category_found = False
+        for keyword in keywords_list:
+            if keyword in upper:
+                # Добавляем КОНКРЕТНОЕ слово
+                found_keywords.append(keyword)
+                category_found = True
+                
+                # Начисляем баллы
+                if category == "крипто":
+                    score += 15
+                elif category == "TON":
+                    score += 25
+                elif category == "финансы":
+                    score += 20
+                elif category == "майнинг":
+                    score += 30
+                elif category == "жалобы":
+                    score += 25
+        
+        # Если нашли слова из категории - добавляем и КАТЕГОРИЮ
+        if category_found:
+            found_keywords.append(category)
+
+    return score, found_keywords
 
 # === Сканирование канала ===
 async def scan_channel(channel_info):
@@ -269,7 +341,7 @@ async def process_lead(user_id, source_channel, score, keywords, source_type):
             db.add(lead)
             await db.commit()
 
-            logger.info(f"✅ ЛИД СОХРАНЁН: {user_id} | @{username or '—'} | {source_channel} | score: {score}")
+            logger.info(f"✅ ЛИД СОХРАНЁН: {user_id} | @{username or '—'} | {source_channel} | score: {score} | keywords: {keywords}")
 
     except Exception as e:
         logger.error(f"❌ Ошибка при сохранении лида {user_id}: {e}")
@@ -278,7 +350,7 @@ async def process_lead(user_id, source_channel, score, keywords, source_type):
         except:
             pass
 
-# === Фильтрация каналов (ИСПРАВЛЕННАЯ) ===
+# === Фильтрация каналов ===
 async def filter_channels(channels):
     filtered_channels = []
     
@@ -313,7 +385,7 @@ async def filter_channels(channels):
 # === Основной процесс ===
 async def run_scanner():
     await client.start(phone=PHONE)
-    logger.info("🚀 Сканер лидов запущен — поиск и сохранение (без рассылки)")
+    logger.info("🚀 Сканер лидов v2.5 запущен — поиск и сохранение (без рассылки)")
 
     # Получаем каналы
     predefined_channels = await get_predefined_channels()
@@ -373,6 +445,9 @@ async def show_leads_statistics():
             status_stats = {}
             score_stats = {"high": 0, "medium": 0, "low": 0}
             
+            # Статистика по ключевым словам
+            keyword_stats = {}
+            
             for lead in leads:
                 # Статистика по источникам
                 source_stats[lead.source_type] = source_stats.get(lead.source_type, 0) + 1
@@ -387,10 +462,16 @@ async def show_leads_statistics():
                     score_stats["medium"] += 1
                 else:
                     score_stats["low"] += 1
+                
+                # Статистика по ключевым словам
+                if lead.keywords_list:
+                    for keyword in lead.keywords_list:
+                        keyword_stats[keyword] = keyword_stats.get(keyword, 0) + 1
             
             logger.info(f"   • По источникам: {source_stats}")
             logger.info(f"   • По статусам: {status_stats}")
             logger.info(f"   • По баллам интереса: {score_stats}")
+            logger.info(f"   • Топ ключевых слов: {dict(sorted(keyword_stats.items(), key=lambda x: x[1], reverse=True)[:15])}")
             
     except Exception as e:
         logger.error(f"Ошибка при получении статистики: {e}")
@@ -398,7 +479,7 @@ async def show_leads_statistics():
 # === Главный цикл ===
 async def main():
     await check_database_structure()
-    logger.info("=== 🎯 CRYPTOHUNTER SCANNER v2.3 (ИСПРАВЛЕННАЯ) ===")
+    logger.info("=== 🎯 CRYPTOHUNTER SCANNER v2.5 (РАСШИРЕННАЯ) ===")
 
     cycle = 0
     while True:
