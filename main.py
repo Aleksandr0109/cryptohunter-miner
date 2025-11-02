@@ -1,4 +1,4 @@
-# main.py — v0.3.2 ПРОДАКШН: + АДМИН-ПАНЕЛЬ (С ОТЛАДКОЙ)
+# main.py — v0.4.0 ПРОДАКШН: + АВТОСОЗДАНИЕ ТАБЛИЦ + ФИКСЫ
 import asyncio
 import logging
 import sys
@@ -10,9 +10,7 @@ import qrcode
 import base64
 from io import BytesIO
 from fastapi.responses import JSONResponse
-
 sys.path.append(str(Path(__file__).parent))
-
 from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
@@ -21,16 +19,14 @@ from config import BOT_TOKEN, TONKEEPER_API_KEY
 from bot.handlers import router
 from bot.admin import router as admin_router
 from bot.outreach import start_outreach
-
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 import aiohttp
 from sqlalchemy import select
-
-from core.database import AsyncSessionLocal
-from core.models import User, Referral, Transaction
+from core.database import AsyncSessionLocal, engine  # ДОБАВИЛИ engine
+from core.models import Base, User, Referral, Transaction  # ДОБАВИЛИ Base
 from core.calculator import ProfitCalculator
 from core.tonkeeper import TonkeeperAPI
 
@@ -86,18 +82,14 @@ async def serve_webapp_assets(filename: str):
 def validate_init_data(init_data: str) -> dict | None:
     if not init_data:
         return None
-    
     try:
         params = dict([x.split('=', 1) for x in init_data.split('&')])
         user_str = params.get('user', '')
-        
         if not user_str:
             return None
-
         user_str = urllib.parse.unquote(user_str)
         user_data = json.loads(user_str)
         user_id = int(user_data["id"])
-        
         return {"user_id": user_id, "username": user_data.get("username")}
     except:
         return None
@@ -110,7 +102,6 @@ async def api_user(request: Request):
         user_id = 8089114323  # тестовый
     else:
         user_id = user_info["user_id"]
-
     async with AsyncSessionLocal() as db:
         user = await db.get(User, user_id)
         if not user:
@@ -123,7 +114,6 @@ async def api_user(request: Request):
             )
             db.add(user)
             await db.commit()
-
         return {
             "user_id": user.user_id,
             "balance": float(user.free_mining_balance),
@@ -140,21 +130,17 @@ async def api_dashboard(request: Request):
         user_id = 8089114323
     else:
         user_id = user_info["user_id"]
-
     async with AsyncSessionLocal() as db:
         user = await db.get(User, user_id)
         if not user:
             raise HTTPException(404, "User not found")
-
         invested = user.invested_amount or Decimal('0')
         balance = user.free_mining_balance or Decimal('0')
         speed = ProfitCalculator.mining_speed(invested)
-
         daily_inv = ProfitCalculator.investment_daily(invested)
         daily_free = ProfitCalculator.free_mining_daily(invested)
         total_daily = daily_inv + daily_free
         days_per_ton = Decimal('1') / daily_free if daily_free > 0 else Decimal('90')
-
         return {
             "invested": float(invested),
             "balance": float(balance),
@@ -190,43 +176,31 @@ async def api_calc(data: dict):
 async def api_qr(data: dict, request: Request):
     user_info = validate_init_data(request.headers.get("X-Telegram-WebApp-Init-Data"))
     user_id = user_info["user_id"] if user_info else 8089114323
-
     amount = float(data.get("amount", 0))
     if amount < 1:
         raise HTTPException(400, "Min 1 TON")
-
     try:
         address = await tonkeeper.get_address()
         url = f"ton://{address}?amount={amount}&testnet=true"
-
         # Генерация QR
-        qr = qrcode.QRCode(
-            version=1,
-            error_correction=qrcode.constants.ERROR_CORRECT_L,
-            box_size=10,
-            border=4,
-        )
+        qr = qrcode.QRCode(version=1, error_correction=qrcode.constants.ERROR_CORRECT_L, box_size=10, border=4)
         qr.add_data(url)
         qr.make(fit=True)
-        
         img = qr.make_image(fill_color="black", back_color="white")
         buffered = BytesIO()
         img.save(buffered, format="PNG")
         qr_base64 = base64.b64encode(buffered.getvalue()).decode()
-
         async with AsyncSessionLocal() as db:
             user = await db.get(User, user_id)
             if user:
                 user.pending_deposit = Decimal(str(amount))
                 user.pending_address = address
                 await db.commit()
-
         return JSONResponse({
             "url": url,
             "address": address,
             "qr_code": f"data:image/png;base64,{qr_base64}"
         })
-        
     except Exception as e:
         logger.error(f"QR generation error: {e}")
         raise HTTPException(500, "QR generation failed")
@@ -236,26 +210,20 @@ async def api_qr(data: dict, request: Request):
 async def api_withdraw(data: dict, request: Request):
     user_info = validate_init_data(request.headers.get("X-Telegram-WebApp-Init-Data"))
     user_id = user_info["user_id"] if user_info else 8089114323
-
     address = data["address"]
     amount = Decimal(str(data.get("amount", 0)))
-
     if not address.startswith("kQ"):
         raise HTTPException(400, "Invalid address")
-
     async with AsyncSessionLocal() as db:
         user = await db.get(User, user_id)
         if not user:
             raise HTTPException(404, "User not found")
-            
         if user.free_mining_balance < Decimal('1'):
             raise HTTPException(400, "Min 1 TON")
-            
         if amount <= 0:
             amount = user.free_mining_balance
         elif amount > user.free_mining_balance:
             raise HTTPException(400, "Insufficient balance")
-
         user.free_mining_balance -= amount
         db.add(Transaction(
             user_id=user.user_id,
@@ -265,7 +233,6 @@ async def api_withdraw(data: dict, request: Request):
             notes=f"Withdraw to {address}"
         ))
         await db.commit()
-
     return {"message": f"Вывод {float(amount)} TON отправлен на адрес {address}!"}
 
 # === API: ПРОВЕРКА ПЛАТЕЖА ===
@@ -273,22 +240,18 @@ async def api_withdraw(data: dict, request: Request):
 async def api_check(request: Request):
     user_info = validate_init_data(request.headers.get("X-Telegram-WebApp-Init-Data"))
     user_id = user_info["user_id"] if user_info else 8089114323
-
     async with AsyncSessionLocal() as db:
         user = await db.get(User, user_id)
         if not user or not user.pending_address:
             return {"status": "no_pending"}
-
         address = user.pending_address
         amount = float(user.pending_deposit)
-
         async with aiohttp.ClientSession() as session:
             async with session.get(
                 f"https://testnet.toncenter.com/api/v3/transactions?address={address}&limit=10",
                 headers={"X-API-Key": TONKEEPER_API_KEY}
             ) as resp:
                 result = await resp.json()
-
         for tx in result.get("transactions", []):
             value = tx.get("in_msg", {}).get("value", 0)
             if value and int(value) >= int(amount * 1e9):
@@ -298,7 +261,6 @@ async def api_check(request: Request):
                 user.total_earned += Decimal(str(bonus))
                 user.pending_deposit = None
                 user.pending_address = None
-
                 db.add(Transaction(
                     user_id=user.user_id,
                     type="deposit",
@@ -307,9 +269,7 @@ async def api_check(request: Request):
                     status="success"
                 ))
                 await db.commit()
-
                 return {"status": "success", "bonus": float(bonus)}
-
         return {"status": "pending"}
 
 # === API: РЕФЕРАЛКА ===
@@ -317,29 +277,23 @@ async def api_check(request: Request):
 async def api_referral(request: Request):
     user_info = validate_init_data(request.headers.get("X-Telegram-WebApp-Init-Data"))
     user_id = user_info["user_id"] if user_info else 8089114323
-
     async with AsyncSessionLocal() as db:
         user = await db.get(User, user_id)
         if not user:
             raise HTTPException(404)
-
         link = f"https://t.me/cruptos023bot?start={user.user_id}"
-        
         direct_result = await db.execute(
             select(Referral).where(Referral.referrer_id == user.user_id, Referral.level == 1)
         )
         direct = direct_result.scalars().all()
-
         level2_count = 0
         total_income = Decimal('0')
-        
         for ref in direct:
             level2_result = await db.execute(
                 select(Referral).where(Referral.referrer_id == ref.referred_id, Referral.level == 2)
             )
             level2_count += level2_result.scalars().count()
             total_income += ref.bonus_paid
-
         return {
             "link": link,
             "direct_count": len(direct),
@@ -353,14 +307,12 @@ async def daily_accrual():
         async with AsyncSessionLocal() as db:
             result = await db.execute(select(User))
             users = result.scalars().all()
-
             for user in users:
                 invested = user.invested_amount or Decimal('0')
                 daily = ProfitCalculator.total_daily_income(invested)
                 user.free_mining_balance += daily
                 user.total_earned += daily
                 user.mining_speed = ProfitCalculator.mining_speed(invested)
-
             await db.commit()
             logger.info("Ежедневные начисления выполнены")
     except Exception as e:
@@ -374,40 +326,46 @@ async def scheduler():
         await aioschedule.run_pending()
         await asyncio.sleep(1)
 
+# === АВТОСОЗДАНИЕ ТАБЛИЦ ===
+async def create_tables():
+    try:
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
+        logger.info("ТАБЛИЦЫ СОЗДАНЫ АВТОМАТИЧЕСКИ!")
+    except Exception as e:
+        logger.error(f"Ошибка создания таблиц: {e}")
+
 # === СТАРТ ===
 async def on_startup():
     logger.info("CryptoHunter Miner Bot запущен")
+    await create_tables()  # АВТОСОЗДАНИЕ ТАБЛИЦ
     asyncio.create_task(scheduler())
     asyncio.create_task(start_outreach())
 
 async def main():
     default = DefaultBotProperties(parse_mode=ParseMode.HTML)
     bot = Bot(token=BOT_TOKEN, default=default)
-    
     storage = MemoryStorage()
     dp = Dispatcher(storage=storage)
-    
-    # ОТЛАДКА: проверка регистрации роутеров
+
     dp.include_router(router)
-    logger.info("✅ Основной роутер зарегистрирован")
-    
+    logger.info("Основной роутер зарегистрирован")
+
     dp.include_router(admin_router)
-    logger.info("✅ Админ роутер зарегистрирован")
-    
-    # ОТЛАДКА: выведем все зарегистрированные команды
+    logger.info("Админ роутер зарегистрирован")
+
     logger.info("=== ЗАРЕГИСТРИРОВАННЫЕ КОМАНДЫ ===")
     for handler in dp.message.handlers:
         if hasattr(handler, 'filters'):
             for filter in handler.filters:
                 if hasattr(filter, 'commands'):
                     logger.info(f"Команда: {filter.commands}")
-    
+
     dp.startup.register(on_startup)
 
     import uvicorn
     config = uvicorn.Config(app, host="0.0.0.0", port=5000, log_level="info")
     server = uvicorn.Server(config)
-
     await asyncio.gather(
         dp.start_polling(bot),
         server.serve()
