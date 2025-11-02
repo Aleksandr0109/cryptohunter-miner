@@ -1,12 +1,15 @@
-# core/database.py — v3.0: ЧИТАЕМ MYSQL_URL (Railway добавляет сам!)
+# core/database.py — v4.0: ЯВНЫЙ ДРАЙВЕР aiomysql
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 import os
 
-# === RAILWAY АВТОМАТИЧЕСКИ ДОБАВЛЯЕТ MYSQL_URL ===
+# === RAILWAY ДОБАВЛЯЕТ MYSQL_URL ===
 DATABASE_URL = os.getenv("MYSQL_URL")
 
 if not DATABASE_URL:
     raise ValueError("MYSQL_URL not found! Check Railway Variables.")
+
+# === ДОБАВЛЯЕМ +aiomysql ===
+DATABASE_URL = DATABASE_URL.replace("mysql://", "mysql+aiomysql://")
 
 # === ДВИЖОК ===
 engine = create_async_engine(
