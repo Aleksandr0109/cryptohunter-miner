@@ -1,4 +1,4 @@
-# main.py — v0.7.0 FIXED RAILWAY VERSION
+# main.py — v0.8.0 FIXED STATIC FILES VERSION
 import os
 import asyncio
 import logging
@@ -10,7 +10,7 @@ import urllib.parse
 import qrcode
 import base64
 from io import BytesIO
-from fastapi.responses import JSONResponse, Response
+from fastapi.responses import JSONResponse, Response, FileResponse
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
@@ -70,7 +70,6 @@ app.mount("/assets", StaticFiles(directory="bot/webapp/assets"), name="assets")
 # === ОСНОВНЫЕ МАРШРУТЫ ===
 @app.get("/")
 async def root():
-    from fastapi.responses import FileResponse
     return FileResponse("bot/webapp/index.html")
 
 @app.get("/health")
@@ -79,12 +78,10 @@ async def health_check():
 
 @app.get("/style.css")
 async def read_css():
-    from fastapi.responses import FileResponse
     return FileResponse("bot/webapp/style.css", media_type="text/css")
 
 @app.get("/script.js")
 async def read_js():
-    from fastapi.responses import FileResponse
     return FileResponse("bot/webapp/script.js", media_type="application/javascript")
 
 @app.get("/favicon.ico")
@@ -93,8 +90,22 @@ async def read_favicon():
 
 @app.get("/webapp/assets/{filename}")
 async def serve_webapp_assets(filename: str):
-    from fastapi.responses import FileResponse
     return FileResponse(f"bot/webapp/assets/{filename}")
+
+# === SPA FALLBACK ДЛЯ ВСЕХ ПУТЕЙ ===
+@app.get("/{path:path}")
+async def spa_fallback(path: str):
+    """Обрабатывает все остальные пути для SPA"""
+    # Игнорируем API пути
+    if path.startswith('api/'):
+        raise HTTPException(status_code=404, detail="API route not found")
+    
+    # Игнорируем статические файлы
+    if path.startswith('webapp/') or path.startswith('assets/'):
+        raise HTTPException(status_code=404, detail="Static file not found")
+    
+    # Для всех остальных путей возвращаем index.html
+    return FileResponse("bot/webapp/index.html")
 
 # === ВАЛИДАЦИЯ initData ===
 def validate_init_data(init_data: str) -> dict | None:
@@ -336,7 +347,7 @@ async def scheduler():
     aioschedule.every().day.at("00:00").do(lambda: asyncio.create_task(daily_accrual()))
     while True:
         await aioschedule.run_pending()
-        await asyncio.sleep(60)  # Увеличил интервал для экономии ресурсов
+        await asyncio.sleep(60)
 
 # === АВТОСОЗДАНИЕ ТАБЛИЦ ===
 async def create_tables():
@@ -365,7 +376,6 @@ async def start_bot_background():
         await dp.start_polling(bot)
     except Exception as e:
         logger.error(f"❌ Ошибка бота: {e}")
-        # Перезапуск через 30 секунд при ошибке
         await asyncio.sleep(30)
         asyncio.create_task(start_bot_background())
 
