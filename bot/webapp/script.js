@@ -5,7 +5,7 @@ const tg = window.Telegram?.WebApp;
 
 // Конфигурация из переменных окружения
 const CONFIG = {
-    API_BASE: window.location.origin,
+    API_BASE: 'https://miner.cryptohunter.ton'
     MIN_INVEST: 1,
     MIN_WITHDRAW: 1,
     DAILY_RATE: 0.25,
