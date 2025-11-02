@@ -1,4 +1,4 @@
-# main.py — v0.5.0 ПРОДАКШН: + WEBVIEW FIX + АВТОТАБЛИЦЫ + ФИКСЫ
+# main.py — v0.6.0 POLLING-ONLY ВЕРСИЯ ДЛЯ RAILWAY
 import asyncio
 import logging
 import sys
@@ -69,14 +69,17 @@ app.mount("/assets", StaticFiles(directory="bot/webapp/assets"), name="assets")
 # === ОСНОВНЫЕ МАРШРУТЫ ===
 @app.get("/")
 async def root():
+    from fastapi.responses import FileResponse
     return FileResponse("bot/webapp/index.html")
 
 @app.get("/style.css")
 async def read_css():
+    from fastapi.responses import FileResponse
     return FileResponse("bot/webapp/style.css", media_type="text/css")
 
 @app.get("/script.js")
 async def read_js():
+    from fastapi.responses import FileResponse
     return FileResponse("bot/webapp/script.js", media_type="application/javascript")
 
 @app.get("/favicon.ico")
@@ -85,6 +88,7 @@ async def read_favicon():
 
 @app.get("/webapp/assets/{filename}")
 async def serve_webapp_assets(filename: str):
+    from fastapi.responses import FileResponse
     return FileResponse(f"bot/webapp/assets/{filename}")
 
 # === ВАЛИДАЦИЯ initData ===
@@ -338,25 +342,20 @@ async def create_tables():
     except Exception as e:
         logger.error(f"Ошибка создания таблиц: {e}")
 
-# === СТАРТ ===
-async def on_startup():
-    logger.info("CryptoHunter Miner Bot запущен")
+# === СТАРТ БОТА (POLLING) ===
+async def start_bot():
+    logger.info("CryptoHunter Miner Bot запущен в режиме POLLING")
+    
     await create_tables()
-    asyncio.create_task(scheduler())
-    asyncio.create_task(start_outreach())
-
-async def main():
+    
     default = DefaultBotProperties(parse_mode=ParseMode.HTML)
     bot = Bot(token=BOT_TOKEN, default=default)
     storage = MemoryStorage()
     dp = Dispatcher(storage=storage)
 
     dp.include_router(router)
-    logger.info("Основной роутер зарегистрирован")
-
     dp.include_router(admin_router)
-    logger.info("Админ роутер зарегистрирован")
-
+    
     logger.info("=== ЗАРЕГИСТРИРОВАННЫЕ КОМАНДЫ ===")
     for handler in dp.message.handlers:
         if hasattr(handler, 'filters'):
@@ -364,14 +363,26 @@ async def main():
                 if hasattr(filter, 'commands'):
                     logger.info(f"Команда: {filter.commands}")
 
-    dp.startup.register(on_startup)
+    # Запускаем фоновые задачи
+    asyncio.create_task(scheduler())
+    asyncio.create_task(start_outreach())
+    
+    # ✅ ЗАПУСКАЕМ ТОЛЬКО POLLING
+    await dp.start_polling(bot)
 
+# === ЗАПУСК ВЕБ-СЕРВЕРА ДЛЯ MINI APP ===
+async def start_web_server():
     import uvicorn
     config = uvicorn.Config(app, host="0.0.0.0", port=5000, log_level="info")
     server = uvicorn.Server(config)
+    await server.serve()
+
+# === ГЛАВНАЯ ФУНКЦИЯ ===
+async def main():
+    # Запускаем оба сервиса параллельно
     await asyncio.gather(
-        dp.start_polling(bot),
-        server.serve()
+        start_bot(),           # Бот в режиме polling
+        start_web_server()     # Веб-сервер для Mini App
     )
 
 if __name__ == "__main__":
