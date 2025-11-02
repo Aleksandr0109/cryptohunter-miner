@@ -1,18 +1,1 @@
-services:
-  - type: web
-    name: cryptohunter
-    env: python
-    plan: free
-    buildCommand: pip install -r requirements.txt
-    startCommand: python main.py
-    healthCheckPath: /health
-    autoDeploy: true
-    envVars:
-      - key: PORT
-        value: 10000
-      - key: WEBAPP_URL
-        value: https://cryptohunter.onrender.com
-      - key: BOT_TOKEN
-        sync: 7968644170:AAFZ9xjkU6wMdp84650IOKuUXXqDty2sEMk
-      - key: TONKEEPER_API_KEY
-        sync: 34c78025d518f9a15cf4769e92438167adc442f5eeddd12f4a6357676eef4f8b
+
