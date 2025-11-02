@@ -10,6 +10,13 @@ import urllib.parse
 import qrcode
 import base64
 from io import BytesIO
+
+# УСТАНОВКА EVENT LOOP ДО ВСЕХ ИМПОРТОВ
+import uvloop
+asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
+loop = asyncio.new_event_loop()
+asyncio.set_event_loop(loop)
+
 from fastapi.responses import JSONResponse, Response, FileResponse
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.staticfiles import StaticFiles
@@ -34,10 +41,6 @@ from core.database import AsyncSessionLocal, engine
 from core.models import Base, User, Referral, Transaction
 from core.calculator import ProfitCalculator
 from core.tonkeeper import TonkeeperAPI
-
-# === НОВЫЕ СКРИПТЫ ===
-from lead_scanner import main as lead_scanner_main
-from outreach_sender import main as outreach_sender_main
 
 # === ЛОГИРОВАНИЕ ===
 logging.basicConfig(
@@ -373,6 +376,8 @@ async def start_bot_background():
 
 # === Lead Scanner ===
 async def start_lead_scanner():
+    # Импортируем здесь, после установки event loop
+    from lead_scanner import main as lead_scanner_main
     while True:
         try:
             logger.info("ЗАПУСК LEAD SCANNER")
@@ -383,6 +388,8 @@ async def start_lead_scanner():
 
 # === Outreach Sender ===
 async def start_outreach_sender():
+    # Импортируем здесь, после установки event loop
+    from outreach_sender import main as outreach_sender_main
     while True:
         try:
             logger.info("ЗАПУСК OUTREACH SENDER")
