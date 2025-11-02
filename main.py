@@ -1,4 +1,4 @@
-# main.py — v0.8.0 FIXED STATIC FILES VERSION
+# main.py — v0.9.0 FULL + LEAD_SCANNER & OUTREACH_SENDER
 import os
 import asyncio
 import logging
@@ -14,16 +14,20 @@ from fastapi.responses import JSONResponse, Response, FileResponse
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
+
+# Добавляем корень проекта в путь
 sys.path.append(str(Path(__file__).parent))
 
 from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 from aiogram.fsm.storage.memory import MemoryStorage
+
 from config import BOT_TOKEN, TONKEEPER_API_KEY
 from bot.handlers import router
 from bot.admin import router as admin_router
 from bot.outreach import start_outreach
+
 import aiohttp
 from sqlalchemy import select
 from core.database import AsyncSessionLocal, engine
@@ -31,17 +35,22 @@ from core.models import Base, User, Referral, Transaction
 from core.calculator import ProfitCalculator
 from core.tonkeeper import TonkeeperAPI
 
+# === НОВЫЕ СКРИПТЫ ===
+from lead_scanner import main as lead_scanner_main
+from outreach_sender import main as outreach_sender_main
+
 # === ЛОГИРОВАНИЕ ===
 logging.basicConfig(
     level=logging.INFO,
-    format='%(asctime)s | %(levelname)s | %(name)s | %(message)s'
+    format='%(asctime)s | %(levelname)s | %(name)s | %(message)s',
+    handlers=[logging.StreamHandler(sys.stdout)]
 )
 logger = logging.getLogger(__name__)
 
 # === FastAPI ===
 app = FastAPI(title="CryptoHunter Miner")
 
-# === CORS + TELEGRAM WEBVIEW FIX ===
+# === CORS + Telegram WebView ===
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -52,22 +61,22 @@ app.add_middleware(
 
 @app.middleware("http")
 async def allow_telegram_webview(request: Request, call_next):
-    user_agent = request.headers.get("user-agent", "")
-    if any(x in user_agent for x in ["Telegram", "iPhone", "Android", "Mobile", "WebView"]):
+    user_agent = request.headers.get("user-agent", "").lower()
+    if any(x in user_agent for x in ["telegram", "iphone", "android", "mobile", "webview"]):
         response = await call_next(request)
         response.headers["X-Frame-Options"] = "ALLOWALL"
         response.headers["Content-Security-Policy"] = "frame-ancestors *;"
         return response
     return await call_next(request)
 
-# === ИНИЦИАЛИЗАЦИЯ Tonkeeper ===
+# === Tonkeeper ===
 tonkeeper = TonkeeperAPI()
 
-# === СТАТИКА ===
+# === Статические файлы ===
 app.mount("/webapp", StaticFiles(directory="bot/webapp"), name="webapp")
 app.mount("/assets", StaticFiles(directory="bot/webapp/assets"), name="assets")
 
-# === ОСНОВНЫЕ МАРШРУТЫ ===
+# === Основные маршруты ===
 @app.get("/")
 async def root():
     return FileResponse("bot/webapp/index.html")
@@ -92,39 +101,27 @@ async def read_favicon():
 async def serve_webapp_assets(filename: str):
     return FileResponse(f"bot/webapp/assets/{filename}")
 
-# === SPA FALLBACK ДЛЯ ВСЕХ ПУТЕЙ ===
+# === SPA Fallback ===
 @app.get("/{path:path}")
 async def spa_fallback(path: str):
-    """Обрабатывает все остальные пути для SPA"""
-    # Игнорируем API пути
-    if path.startswith('api/'):
-        raise HTTPException(status_code=404, detail="API route not found")
-    
-    # Игнорируем статические файлы
-    if path.startswith('webapp/') or path.startswith('assets/'):
-        raise HTTPException(status_code=404, detail="Static file not found")
-    
-    # Для всех остальных путей возвращаем index.html
+    if path.startswith('api/') or path.startswith('webapp/') or path.startswith('assets/'):
+        raise HTTPException(status_code=404)
     return FileResponse("bot/webapp/index.html")
 
-# === ВАЛИДАЦИЯ initData ===
+# === Валидация initData ===
 def validate_init_data(init_data: str) -> dict | None:
     if not init_data:
         return None
     try:
         params = dict([x.split('=', 1) for x in init_data.split('&')])
-        user_str = params.get('user', '')
-        if not user_str:
-            return None
-        user_str = urllib.parse.unquote(user_str)
+        user_str = urllib.parse.unquote(params.get('user', ''))
         user_data = json.loads(user_str)
-        user_id = int(user_data["id"])
-        return {"user_id": user_id, "username": user_data.get("username")}
+        return {"user_id": int(user_data["id"]), "username": user_data.get("username")}
     except Exception as e:
-        logger.error(f"Ошибка валидации initData: {e}")
+        logger.error(f"initData error: {e}")
         return None
 
-# === API: ПОЛЬЗОВАТЕЛЬ ===
+# === API: Пользователь ===
 @app.post("/api/user")
 async def api_user(request: Request):
     user_info = validate_init_data(request.headers.get("X-Telegram-WebApp-Init-Data"))
@@ -149,7 +146,7 @@ async def api_user(request: Request):
             "speed": round(ProfitCalculator.mining_speed(user.invested_amount) * 100, 2)
         }
 
-# === API: DASHBOARD ===
+# === API: Дашборд ===
 @app.post("/api/dashboard")
 async def api_dashboard(request: Request):
     user_info = validate_init_data(request.headers.get("X-Telegram-WebApp-Init-Data"))
@@ -161,10 +158,12 @@ async def api_dashboard(request: Request):
         invested = user.invested_amount or Decimal('0')
         balance = user.free_mining_balance or Decimal('0')
         speed = ProfitCalculator.mining_speed(invested)
+        
         daily_inv = ProfitCalculator.investment_daily(invested)
         daily_free = ProfitCalculator.free_mining_daily(invested)
         total_daily = daily_inv + daily_free
         days_per_ton = Decimal('1') / daily_free if daily_free > 0 else Decimal('90')
+
         return {
             "invested": float(invested),
             "balance": float(balance),
@@ -177,7 +176,7 @@ async def api_dashboard(request: Request):
             "can_withdraw": balance >= Decimal('1')
         }
 
-# === API: КАЛЬКУЛЯТОР ===
+# === API: Калькулятор ===
 @app.post("/api/calc")
 async def api_calc(data: dict):
     try:
@@ -195,7 +194,7 @@ async def api_calc(data: dict):
     except:
         raise HTTPException(400, "Invalid amount")
 
-# === API: QR ДЕПОЗИТ ===
+# === API: QR Депозит ===
 @app.post("/api/qr")
 async def api_qr(data: dict, request: Request):
     user_info = validate_init_data(request.headers.get("X-Telegram-WebApp-Init-Data"))
@@ -206,29 +205,31 @@ async def api_qr(data: dict, request: Request):
     try:
         address = await tonkeeper.get_address()
         url = f"ton://{address}?amount={int(amount * 1e9)}"
-        qr = qrcode.QRCode(version=1, error_correction=qrcode.constants.ERROR_CORRECT_L, box_size=10, border=4)
+        qr = qrcode.QRCode(version=1, box_size=10, border=4)
         qr.add_data(url)
         qr.make(fit=True)
         img = qr.make_image(fill_color="black", back_color="white")
         buffered = BytesIO()
         img.save(buffered, format="PNG")
         qr_base64 = base64.b64encode(buffered.getvalue()).decode()
+
         async with AsyncSessionLocal() as db:
             user = await db.get(User, user_id)
             if user:
                 user.pending_deposit = Decimal(str(amount))
                 user.pending_address = address
                 await db.commit()
+
         return JSONResponse({
             "url": url,
             "address": address,
             "qr_code": f"data:image/png;base64,{qr_base64}"
         })
     except Exception as e:
-        logger.error(f"QR generation error: {e}")
+        logger.error(f"QR error: {e}")
         raise HTTPException(500, "QR generation failed")
 
-# === API: ВЫВОД ===
+# === API: Вывод ===
 @app.post("/api/withdraw")
 async def api_withdraw(data: dict, request: Request):
     user_info = validate_init_data(request.headers.get("X-Telegram-WebApp-Init-Data"))
@@ -237,6 +238,7 @@ async def api_withdraw(data: dict, request: Request):
     amount = Decimal(str(data.get("amount", 0)))
     if not address.startswith("kQ"):
         raise HTTPException(400, "Invalid address")
+
     async with AsyncSessionLocal() as db:
         user = await db.get(User, user_id)
         if not user:
@@ -247,6 +249,7 @@ async def api_withdraw(data: dict, request: Request):
             amount = user.free_mining_balance
         elif amount > user.free_mining_balance:
             raise HTTPException(400, "Insufficient balance")
+
         user.free_mining_balance -= amount
         db.add(Transaction(
             user_id=user.user_id,
@@ -256,9 +259,10 @@ async def api_withdraw(data: dict, request: Request):
             notes=f"Withdraw to {address}"
         ))
         await db.commit()
-    return {"message": f"Вывод {float(amount)} TON отправлен на адрес {address}!"}
 
-# === API: ПРОВЕРКА ПЛАТЕЖА ===
+    return {"message": f"Вывод {float(amount)} TON отправлен на {address}"}
+
+# === API: Проверка платежа ===
 @app.post("/api/check")
 async def api_check(request: Request):
     user_info = validate_init_data(request.headers.get("X-Telegram-WebApp-Init-Data"))
@@ -267,14 +271,17 @@ async def api_check(request: Request):
         user = await db.get(User, user_id)
         if not user or not user.pending_address:
             return {"status": "no_pending"}
+
         address = user.pending_address
         amount = float(user.pending_deposit)
+
         async with aiohttp.ClientSession() as session:
             async with session.get(
                 f"https://toncenter.com/api/v3/transactions?address={address}&limit=10",
                 headers={"X-API-Key": TONKEEPER_API_KEY}
             ) as resp:
                 result = await resp.json()
+
         for tx in result.get("transactions", []):
             value = tx.get("in_msg", {}).get("value", 0)
             if value and int(value) >= int(amount * 1e9):
@@ -295,7 +302,7 @@ async def api_check(request: Request):
                 return {"status": "success", "bonus": float(bonus)}
         return {"status": "pending"}
 
-# === API: РЕФЕРАЛКА ===
+# === API: Рефералка ===
 @app.post("/api/referral")
 async def api_referral(request: Request):
     user_info = validate_init_data(request.headers.get("X-Telegram-WebApp-Init-Data"))
@@ -305,17 +312,13 @@ async def api_referral(request: Request):
         if not user:
             raise HTTPException(404)
         link = f"https://t.me/CryptoHunterTonBot?start={user.user_id}"
-        direct_result = await db.execute(
-            select(Referral).where(Referral.referrer_id == user.user_id, Referral.level == 1)
-        )
+        direct_result = await db.execute(select(Referral).where(Referral.referrer_id == user.user_id, Referral.level == 1))
         direct = direct_result.scalars().all()
         level2_count = 0
         total_income = Decimal('0')
         for ref in direct:
-            level2_result = await db.execute(
-                select(Referral).where(Referral.referrer_id == ref.referred_id, Referral.level == 2)
-            )
-            level2_count += level2_result.scalars().count()
+            l2 = await db.execute(select(Referral).where(Referral.referrer_id == ref.referred_id, Referral.level == 2))
+            level2_count += l2.scalars().count()
             total_income += ref.bonus_paid
         return {
             "link": link,
@@ -324,12 +327,11 @@ async def api_referral(request: Request):
             "income": float(total_income)
         }
 
-# === ЕЖЕДНЕВНЫЕ НАЧИСЛЕНИЯ ===
+# === Ежедневные начисления ===
 async def daily_accrual():
     try:
         async with AsyncSessionLocal() as db:
-            result = await db.execute(select(User))
-            users = result.scalars().all()
+            users = (await db.execute(select(User))).scalars().all()
             for user in users:
                 invested = user.invested_amount or Decimal('0')
                 daily = ProfitCalculator.total_daily_income(invested)
@@ -341,7 +343,7 @@ async def daily_accrual():
     except Exception as e:
         logger.error(f"Ошибка начислений: {e}")
 
-# === ПЛАНИРОВЩИК ===
+# === Планировщик ===
 async def scheduler():
     import aioschedule
     aioschedule.every().day.at("00:00").do(lambda: asyncio.create_task(daily_accrual()))
@@ -349,61 +351,65 @@ async def scheduler():
         await aioschedule.run_pending()
         await asyncio.sleep(60)
 
-# === АВТОСОЗДАНИЕ ТАБЛИЦ ===
+# === Создание таблиц ===
 async def create_tables():
-    try:
-        async with engine.begin() as conn:
-            await conn.run_sync(Base.metadata.create_all)
-        logger.info("✅ ТАБЛИЦЫ БАЗЫ ДАННЫХ СОЗДАНЫ")
-    except Exception as e:
-        logger.error(f"❌ Ошибка создания таблиц: {e}")
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+    logger.info("ТАБЛИЦЫ БД СОЗДАНЫ")
 
-# === БОТ В ФОНОВОМ РЕЖИМЕ ===
+# === Бот в фоне ===
 async def start_bot_background():
-    """Запуск бота как фоновой задачи"""
-    try:
-        logger.info("🤖 ЗАПУСК БОТА В ФОНОВОМ РЕЖИМЕ...")
-        
-        default = DefaultBotProperties(parse_mode=ParseMode.HTML)
-        bot = Bot(token=BOT_TOKEN, default=default)
-        storage = MemoryStorage()
-        dp = Dispatcher(storage=storage)
+    while True:
+        try:
+            logger.info("ЗАПУСК БОТА...")
+            bot = Bot(token=BOT_TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
+            dp = Dispatcher(storage=MemoryStorage())
+            dp.include_router(router)
+            dp.include_router(admin_router)
+            await dp.start_polling(bot)
+        except Exception as e:
+            logger.error(f"Ошибка бота: {e}")
+            await asyncio.sleep(15)
 
-        dp.include_router(router)
-        dp.include_router(admin_router)
-        
-        logger.info("✅ БОТ ЗАПУЩЕН (POLLING)")
-        await dp.start_polling(bot)
-    except Exception as e:
-        logger.error(f"❌ Ошибка бота: {e}")
+# === Lead Scanner ===
+async def start_lead_scanner():
+    while True:
+        try:
+            logger.info("ЗАПУСК LEAD SCANNER")
+            await lead_scanner_main()
+        except Exception as e:
+            logger.error(f"Lead Scanner упал: {e}")
         await asyncio.sleep(30)
-        asyncio.create_task(start_bot_background())
 
-# === ГЛАВНАЯ ФУНКЦИЯ ===
+# === Outreach Sender ===
+async def start_outreach_sender():
+    while True:
+        try:
+            logger.info("ЗАПУСК OUTREACH SENDER")
+            await outreach_sender_main()
+        except Exception as e:
+            logger.error(f"Outreach Sender упал: {e}")
+        await asyncio.sleep(45)
+
+# === Главная функция ===
 async def main():
-    """Основная функция запуска для Railway"""
-    logger.info("🚀 ЗАПУСК CRYPTOHUNTER MINER НА RAILWAY...")
-    
-    # Создаем таблицы БД
+    logger.info("ЗАПУСК CRYPTOHUNTER MINER v0.9.0")
+
     await create_tables()
-    
-    # Запускаем фоновые задачи
+
+    # Запуск всех фоновых задач
     asyncio.create_task(start_bot_background())
     asyncio.create_task(scheduler())
     asyncio.create_task(start_outreach())
-    
-    # Запускаем веб-сервер (ОСНОВНОЙ процесс для Railway)
+    asyncio.create_task(start_lead_scanner())        # ← НОВОЕ
+    asyncio.create_task(start_outreach_sender())     # ← НОВОЕ
+
+    # Веб-сервер
     import uvicorn
     port = int(os.getenv("PORT", 5000))
-    logger.info(f"🌐 ЗАПУСК ВЕБ-СЕРВЕРА НА ПОРТУ {port}")
-    
-    config = uvicorn.Config(
-        app, 
-        host="0.0.0.0", 
-        port=port, 
-        log_level="info",
-        access_log=True
-    )
+    logger.info(f"ЗАПУСК СЕРВЕРА НА ПОРТУ {port}")
+
+    config = uvicorn.Config(app, host="0.0.0.0", port=port, log_level="info")
     server = uvicorn.Server(config)
     await server.serve()
 
