@@ -1,7 +1,7 @@
-# core/models.py — v1.2 С ДОБАВЛЕННЫМИ ПОЛЯМИ ДЛЯ MINI-APP
+# core/models.py — ПОЛНАЯ ВЕРСИЯ С PendingDeposit
 from sqlalchemy import (
     Column, BigInteger, String, DECIMAL, TIMESTAMP, Integer,
-    func, Text, Boolean, ForeignKey
+    func, Text, Boolean, ForeignKey, DateTime
 )
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
@@ -10,8 +10,6 @@ from datetime import datetime
 
 Base = declarative_base()
 
-
-# === USER ===
 class User(Base):
     __tablename__ = "users"
     
@@ -30,15 +28,13 @@ class User(Base):
     language = Column(String(10), default='ru')
     notifications = Column(Boolean, default=True)
 
-    # === ДОБАВЛЕННЫЕ ПОЛЯ ДЛЯ MINI-APP ===
+    # ДЛЯ MINI-APP
     pending_deposit = Column(DECIMAL(15,6), nullable=True)
     pending_address = Column(String(255), nullable=True)
 
     referrals = relationship("Referral", back_populates="referrer", foreign_keys="Referral.referrer_id")
     referred_by = relationship("Referral", back_populates="referred", foreign_keys="Referral.referred_id", uselist=False)
 
-
-# === LEAD — С @property status ДЛЯ outreach.py ===
 class Lead(Base):
     __tablename__ = "leads"
     
@@ -56,7 +52,6 @@ class Lead(Base):
     last_contact = Column(TIMESTAMP, nullable=True)
     notes = Column(Text, nullable=True)
 
-    # === СОВМЕСТИМОСТЬ С outreach.py ===
     @property
     def status(self):
         return self.conversion_status
@@ -65,7 +60,6 @@ class Lead(Base):
     def status(self, value):
         self.conversion_status = value
 
-    # === Работа с keywords как список ===
     @property
     def keywords_list(self):
         if self.interest_keywords and self.interest_keywords != '[]':
@@ -82,8 +76,6 @@ class Lead(Base):
         else:
             self.interest_keywords = '[]'
 
-
-# === TRANSACTION ===
 class Transaction(Base):
     __tablename__ = "transactions"
     
@@ -97,8 +89,6 @@ class Transaction(Base):
     tx_hash = Column(String(255), nullable=True)
     notes = Column(Text, nullable=True)
 
-
-# === REFERRAL ===
 class Referral(Base):
     __tablename__ = "referrals"
     
@@ -112,3 +102,19 @@ class Referral(Base):
 
     referrer = relationship("User", back_populates="referrals", foreign_keys=[referrer_id])
     referred = relationship("User", back_populates="referred_by", foreign_keys=[referred_id])
+
+class PendingDeposit(Base):
+    __tablename__ = "pending_deposits"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(BigInteger, nullable=False, index=True)
+    amount = Column(DECIMAL(15, 6), nullable=False)
+    comment = Column(String(255), nullable=False, unique=True, index=True)
+    address = Column(String(255), nullable=False)
+    status = Column(String(50), default="pending")  # pending, completed, expired, failed
+    created_at = Column(DateTime, default=datetime.utcnow)
+    expires_at = Column(DateTime, nullable=False)
+    completed_at = Column(DateTime)
+    
+    def __repr__(self):
+        return f"<PendingDeposit {self.id} user={self.user_id} amount={self.amount} status={self.status}>"
