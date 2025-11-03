@@ -1,4 +1,4 @@
-# main.py — v1.1 — ФИКСИРОВАННЫЕ ИНТЕРВАЛЫ
+# main.py — v1.3 — ОДНА СЕССИЯ ДЛЯ ВСЕГО
 import os
 import asyncio
 import logging
@@ -108,6 +108,8 @@ def validate_init_data(init_data: str) -> dict | None:
     if not init_data:
         return None
     try:
+        import urllib.parse
+        import json
         params = dict([x.split('=', 1) for x in init_data.split('&')])
         user_str = urllib.parse.unquote(params.get('user', ''))
         user_data = json.loads(user_str)
@@ -124,6 +126,7 @@ async def api_user(request: Request):
     async with AsyncSessionLocal() as db:
         user = await db.get(User, user_id)
         if not user:
+            from decimal import Decimal
             user = User(
                 user_id=user_id,
                 username=user_info.get("username", "test_user") if user_info else "test_user",
@@ -150,6 +153,7 @@ async def api_dashboard(request: Request):
         user = await db.get(User, user_id)
         if not user:
             raise HTTPException(404, "User not found")
+        from decimal import Decimal
         invested = user.invested_amount or Decimal('0')
         balance = user.free_mining_balance or Decimal('0')
         speed = ProfitCalculator.mining_speed(invested)
@@ -175,6 +179,7 @@ async def api_dashboard(request: Request):
 @app.post("/api/calc")
 async def api_calc(data: dict):
     try:
+        from decimal import Decimal
         amount = Decimal(str(data["amount"]))
         if amount <= 0:
             raise ValueError
@@ -198,6 +203,11 @@ async def api_qr(data: dict, request: Request):
     if amount < 1:
         raise HTTPException(400, "Min 1 TON")
     try:
+        import qrcode
+        import base64
+        from io import BytesIO
+        from decimal import Decimal
+        
         address = await tonkeeper.get_address()
         url = f"ton://{address}?amount={int(amount * 1e9)}"
         qr = qrcode.QRCode(version=1, box_size=10, border=4)
@@ -230,6 +240,7 @@ async def api_withdraw(data: dict, request: Request):
     user_info = validate_init_data(request.headers.get("X-Telegram-WebApp-Init-Data"))
     user_id = user_info["user_id"] if user_info else 8089114323
     address = data["address"]
+    from decimal import Decimal
     amount = Decimal(str(data.get("amount", 0)))
     if not address.startswith("kQ"):
         raise HTTPException(400, "Invalid address")
@@ -280,6 +291,7 @@ async def api_check(request: Request):
         for tx in result.get("transactions", []):
             value = tx.get("in_msg", {}).get("value", 0)
             if value and int(value) >= int(amount * 1e9):
+                from decimal import Decimal
                 bonus = amount * 0.05
                 user.invested_amount += Decimal(str(amount))
                 user.free_mining_balance += Decimal(str(bonus))
@@ -310,6 +322,7 @@ async def api_referral(request: Request):
         direct_result = await db.execute(select(Referral).where(Referral.referrer_id == user.user_id, Referral.level == 1))
         direct = direct_result.scalars().all()
         level2_count = 0
+        from decimal import Decimal
         total_income = Decimal('0')
         for ref in direct:
             l2 = await db.execute(select(Referral).where(Referral.referrer_id == ref.referred_id, Referral.level == 2))
@@ -328,6 +341,7 @@ async def daily_accrual():
         async with AsyncSessionLocal() as db:
             users = (await db.execute(select(User))).scalars().all()
             for user in users:
+                from decimal import Decimal
                 invested = user.invested_amount or Decimal('0')
                 daily = ProfitCalculator.total_daily_income(invested)
                 user.free_mining_balance += daily
@@ -377,14 +391,12 @@ async def start_lead_scanner():
             
             API_ID = int(os.getenv("API_ID"))
             API_HASH = os.getenv("API_HASH")
-            PHONE = os.getenv("PHONE")
             
-            # Уникальная сессия для каждого запуска
-            session_name = f"scanner_{int(asyncio.get_event_loop().time())}"
-            client = TelegramClient(session_name, API_ID, API_HASH)
+            # ИСПОЛЬЗУЕМ СУЩЕСТВУЮЩУЮ СЕССИЮ
+            client = TelegramClient("scanner_session", API_ID, API_HASH)
             
-            await client.start(phone=PHONE)
-            await run_scanner()
+            await client.start()
+            await run_scanner(client)
             await client.disconnect()
             
             logger.info("✅ Сканирование завершено. Ждём 4 часа...")
@@ -412,7 +424,7 @@ async def start_outreach_sender():
 
 # === Главная функция ===
 async def main():
-    logger.info("🚀 ЗАПУСК CRYPTOHUNTER MINER v1.1")
+    logger.info("🚀 ЗАПУСК CRYPTOHUNTER MINER v1.3 - ОДНА СЕССИЯ")
 
     await create_tables()
 
@@ -425,7 +437,7 @@ async def main():
 
     # Веб-сервер
     import uvicorn
-    port = int(os.getenv("PORT", 5000))
+    port = int(os.getenv("PORT", 8080))
     logger.info(f"🌐 ЗАПУСК СЕРВЕРА НА ПОРТУ {port}")
 
     config = uvicorn.Config(app, host="0.0.0.0", port=port, log_level="info")
