@@ -315,20 +315,42 @@ async def api_check(request: Request):
 async def api_referral(request: Request):
     user_info = validate_init_data(request.headers.get("X-Telegram-WebApp-Init-Data"))
     user_id = user_info["user_id"] if user_info else 8089114323
+    
     async with AsyncSessionLocal() as db:
         user = await db.get(User, user_id)
         if not user:
-            raise HTTPException(404)
-        link = f"https://t.me/CryptoHunterTonBot?start={user.user_id}"
-        direct_result = await db.execute(select(Referral).where(Referral.referrer_id == user.user_id, Referral.level == 1))
+            raise HTTPException(404, "User not found")
+        
+        # Правильная реферальная ссылка
+        link = f"https://t.me/CryptoHunterTonBot?start=ref_{user.user_id}"
+        
+        # Получаем статистику рефералов
+        direct_result = await db.execute(
+            select(Referral).where(
+                Referral.referrer_id == user.user_id, 
+                Referral.level == 1
+            )
+        )
         direct = direct_result.scalars().all()
+        
         level2_count = 0
         from decimal import Decimal
         total_income = Decimal('0')
+        
+        # Считаем рефералов 2 уровня и общий доход
         for ref in direct:
-            l2 = await db.execute(select(Referral).where(Referral.referrer_id == ref.referred_id, Referral.level == 2))
-            level2_count += l2.scalars().count()
-            total_income += ref.bonus_paid
+            # Рефералы 2 уровня
+            l2_result = await db.execute(
+                select(Referral).where(
+                    Referral.referrer_id == ref.referred_id, 
+                    Referral.level == 2
+                )
+            )
+            level2_count += len(l2_result.scalars().all())
+            
+            # Суммируем доход
+            total_income += ref.bonus_paid or Decimal('0')
+        
         return {
             "link": link,
             "direct_count": len(direct),
