@@ -1,5 +1,4 @@
-
-# main.py — v1.8 — ЕЖЕЧАСНЫЕ И ЕЖЕДНЕВНЫЕ НАЧИСЛЕНИЯ (полный файл, referral fixed to use BOT_USERNAME)
+# main.py — v2.0 — РАБОЧАЯ СИСТЕМА ОПЛАТЫ + ЕЖЕЧАСНЫЕ НАЧИСЛЕНИЯ
 import os
 import asyncio
 import logging
@@ -25,20 +24,18 @@ from aiogram.enums import ParseMode
 from aiogram.fsm.storage.memory import MemoryStorage
 
 # === CONFIG ===
-# Ensure you have BOT_TOKEN and BOT_USERNAME in your .env and config.py exposes them
 from config import BOT_TOKEN, BOT_USERNAME, TONKEEPER_API_KEY
 
 from bot.handlers import router
 from bot.admin import router as admin_router
-# start_outreach should be an async function that can be awaited or scheduled
 from bot.outreach import start_outreach
 
 import aiohttp
 from sqlalchemy import select
 from core.database import AsyncSessionLocal, engine
-from core.models import Base, User, Referral, Transaction
+from core.models import Base, User, Referral, Transaction, PendingDeposit
 from core.calculator import ProfitCalculator
-from core.tonkeeper import TonkeeperAPI
+from core.tonkeeper import tonkeeper
 
 # === ЛОГИРОВАНИЕ ===
 logging.basicConfig(
@@ -72,10 +69,12 @@ async def allow_telegram_webview(request: Request, call_next):
 
 # === Tonkeeper ===
 try:
-    tonkeeper = TonkeeperAPI()
+    if hasattr(tonkeeper, 'wallet') and tonkeeper.wallet:
+        logger.info(f"✅ TonkeeperAPI инициализирован: {tonkeeper.wallet.address.to_string()}")
+    else:
+        logger.warning("❌ Tonkeeper кошелек не инициализирован - проверь TONKEEPER_MNEMONIC")
 except Exception as e:
-    logger.error(f"Ошибка инициализации TonkeeperAPI: {e}")
-    tonkeeper = None
+    logger.error(f"Ошибка проверки Tonkeeper: {e}")
 
 # === Статические файлы ===
 app.mount("/webapp", StaticFiles(directory="bot/webapp"), name="webapp")
@@ -204,47 +203,89 @@ async def api_calc(data: dict):
     except:
         raise HTTPException(400, "Invalid amount")
 
-# === API: QR Депозит ===
-@app.post("/api/qr")
-async def api_qr(data: dict, request: Request):
-    user_info = validate_init_data(request.headers.get("X-Telegram-WebApp-Init-Data"))
-    user_id = user_info["user_id"] if user_info else 8089114323
-    amount = float(data.get("amount", 0))
-    if amount < 1:
-        raise HTTPException(400, "Min 1 TON")
+# === API: Создание депозита ===
+@app.post("/api/deposit")
+async def api_deposit(data: dict, request: Request):
+    """Создание депозита с уникальным комментарием"""
     try:
-        import qrcode
-        import base64
-        from io import BytesIO
-        from decimal import Decimal
+        user_info = validate_init_data(request.headers.get("X-Telegram-WebApp-Init-Data"))
+        user_id = user_info["user_id"] if user_info else 8089114323
+        
+        amount = float(data.get("amount", 0))
+        if amount < 1:
+            raise HTTPException(400, "Минимум 1 TON")
 
-        if tonkeeper is None:
-            raise RuntimeError("Tonkeeper not initialized")
-        address = await tonkeeper.get_address()
-        url = f"ton://{address}?amount={int(amount * 1e9)}"
-        qr = qrcode.QRCode(version=1, box_size=10, border=4)
-        qr.add_data(url)
-        qr.make(fit=True)
-        img = qr.make_image(fill_color="black", back_color="white")
-        buffered = BytesIO()
-        img.save(buffered, format="PNG")
-        qr_base64 = base64.b64encode(buffered.getvalue()).decode()
-
-        async with AsyncSessionLocal() as db:
-            user = await db.get(User, user_id)
-            if user:
-                user.pending_deposit = Decimal(str(amount))
-                user.pending_address = address
-                await db.commit()
-
+        # Создаем платежный запрос
+        payment_data = await tonkeeper.create_payment_request(user_id, amount)
+        
         return JSONResponse({
-            "url": url,
-            "address": address,
-            "qr_code": f"data:image/png;base64,{qr_base64}"
+            "success": True,
+            "deposit_id": payment_data["deposit_id"],
+            "payment_url": payment_data["url"],
+            "address": payment_data["address"],
+            "comment": payment_data["comment"],
+            "qr_code": payment_data["qr_code"],
+            "amount": amount,
+            "expires_in": "24 hours"
         })
+        
     except Exception as e:
-        logger.error(f"QR error: {e}")
-        raise HTTPException(500, "QR generation failed")
+        logger.error(f"Deposit error: {e}")
+        raise HTTPException(500, "Ошибка создания депозита")
+
+# === API: Проверка платежа ===
+@app.post("/api/check-payment")
+async def api_check_payment(data: dict, request: Request):
+    """Проверка статуса платежа"""
+    try:
+        user_info = validate_init_data(request.headers.get("X-Telegram-WebApp-Init-Data"))
+        user_id = user_info["user_id"] if user_info else 8089114323
+        
+        deposit_id = data.get("deposit_id")
+        
+        status = await tonkeeper.check_payment_status(user_id, deposit_id)
+        
+        if status["status"] == "completed":
+            # Зачисляем средства пользователю
+            async with AsyncSessionLocal() as db:
+                user = await db.get(User, user_id)
+                if user:
+                    from decimal import Decimal
+                    amount = Decimal(str(status["amount"]))
+                    bonus = amount * Decimal('0.05')
+                    
+                    # Обновляем балансы
+                    user.invested_amount += amount
+                    user.free_mining_balance += bonus
+                    user.total_earned += bonus
+                    
+                    # Очищаем pending поля
+                    user.pending_deposit = None
+                    user.pending_address = None
+                    
+                    # Создаем транзакцию
+                    db.add(Transaction(
+                        user_id=user_id,
+                        type="deposit",
+                        amount=amount,
+                        status="completed",
+                        notes=f"Deposit with bonus {float(bonus)} TON"
+                    ))
+                    
+                    await db.commit()
+                    
+                    return {
+                        "status": "completed",
+                        "amount": float(amount),
+                        "bonus": float(bonus),
+                        "message": f"Депозит {amount} TON зачислен! Бонус: {bonus} TON"
+                    }
+        
+        return status
+        
+    except Exception as e:
+        logger.error(f"Check payment error: {e}")
+        return {"status": "error", "message": "Ошибка проверки платежа"}
 
 # === API: Вывод ===
 @app.post("/api/withdraw")
@@ -280,47 +321,6 @@ async def api_withdraw(data: dict, request: Request):
 
     return {"message": f"Вывод {float(amount)} TON отправлен на {address}"}
 
-# === API: Проверка платежа ===
-@app.post("/api/check")
-async def api_check(request: Request):
-    user_info = validate_init_data(request.headers.get("X-Telegram-WebApp-Init-Data"))
-    user_id = user_info["user_id"] if user_info else 8089114323
-    async with AsyncSessionLocal() as db:
-        user = await db.get(User, user_id)
-        if not user or not user.pending_address:
-            return {"status": "no_pending"}
-
-        address = user.pending_address
-        amount = float(user.pending_deposit)
-
-        async with aiohttp.ClientSession() as session:
-            async with session.get(
-                f"https://toncenter.com/api/v3/transactions?address={address}&limit=10",
-                headers={"X-API-Key": TONKEEPER_API_KEY}
-            ) as resp:
-                result = await resp.json()
-
-        for tx in result.get("transactions", []):
-            value = tx.get("in_msg", {}).get("value", 0)
-            if value and int(value) >= int(amount * 1e9):
-                from decimal import Decimal
-                bonus = amount * 0.05
-                user.invested_amount += Decimal(str(amount))
-                user.free_mining_balance += Decimal(str(bonus))
-                user.total_earned += Decimal(str(bonus))
-                user.pending_deposit = None
-                user.pending_address = None
-                db.add(Transaction(
-                    user_id=user.user_id,
-                    type="deposit",
-                    amount=Decimal(str(amount)),
-                    tx_hash=tx["hash"],
-                    status="success"
-                ))
-                await db.commit()
-                return {"status": "success", "bonus": float(bonus)}
-        return {"status": "pending"}
-
 # === API: Рефералка ===
 @app.post("/api/referral")
 async def api_referral(request: Request):
@@ -330,7 +330,6 @@ async def api_referral(request: Request):
     if user_info and "user_id" in user_info:
         user_id = int(user_info["user_id"])
     else:
-        # fallback: берём ID тестового пользователя (если запрос не из Telegram WebApp)
         user_id = 8089114323
 
     async with AsyncSessionLocal() as db:
@@ -349,13 +348,9 @@ async def api_referral(request: Request):
             await db.flush()
             await db.commit()
 
-        # === Берём username бота из .env ===
         bot_username = BOT_USERNAME.lstrip('@') if BOT_USERNAME else "unknown_bot"
-
-        # === Формируем ссылку без ошибок ===
         link = f"https://t.me/{bot_username}?start=ref_{user.user_id}"
 
-        # === Подсчёт рефералов ===
         from decimal import Decimal
         direct_result = await db.execute(
             select(Referral).where(Referral.referrer_id == user.user_id, Referral.level == 1)
@@ -379,7 +374,6 @@ async def api_referral(request: Request):
             "income": float(total_income)
         }
 
-
 # === ЕЖЕЧАСНЫЕ начисления ===
 async def hourly_accrual():
     """Начисления каждый час"""
@@ -393,7 +387,7 @@ async def hourly_accrual():
                 from decimal import Decimal
                 invested = user.invested_amount or Decimal('0')
 
-                if invested > 0:  # Только у кого есть инвестиции
+                if invested > 0:
                     hourly = ProfitCalculator.total_daily_income(invested) / 24
                     if hourly > 0:
                         user.free_mining_balance += hourly
@@ -425,7 +419,6 @@ async def daily_accrual():
                 invested = user.invested_amount or Decimal('0')
 
                 if invested > 0:
-                    # Бонусные начисления (1% от депозита)
                     daily_bonus = invested * Decimal('0.01')
                     user.free_mining_balance += daily_bonus
                     user.total_earned += daily_bonus
@@ -447,10 +440,7 @@ async def scheduler():
     """Улучшенный планировщик с ежечасными и ежедневными начислениями"""
     import aioschedule
 
-    # Ежечасные начисления (каждый час)
     aioschedule.every().hour.at(":00").do(lambda: asyncio.create_task(hourly_accrual()))
-
-    # Ежедневные бонусные начисления (в полночь)
     aioschedule.every().day.at("00:00").do(lambda: asyncio.create_task(daily_accrual()))
 
     logger.info("⏰ Планировщик запущен: ежечасные и ежедневные начисления")
@@ -458,7 +448,7 @@ async def scheduler():
     while True:
         try:
             await aioschedule.run_pending()
-            await asyncio.sleep(30)  # Проверяем каждые 30 секунд
+            await asyncio.sleep(30)
         except Exception as e:
             logger.error(f"❌ Ошибка планировщика: {e}")
             await asyncio.sleep(60)
@@ -495,9 +485,7 @@ async def run_lead_scanner():
         API_ID = int(os.getenv("API_ID"))
         API_HASH = os.getenv("API_HASH")
 
-        # Используем сессию
         client = TelegramClient("scanner_session", API_ID, API_HASH)
-
         await client.start()
         await run_scanner(client)
         await client.disconnect()
@@ -527,9 +515,6 @@ async def run_outreach_sender():
 
 # === ОСНОВНОЙ ЦИКЛ: РАССЫЛКА ПЕРВАЯ → СКАНИРОВАНИЕ ===
 async def main_worker():
-    """Главный рабочий цикл: 4 часа рассылка → 4 часа сканирование"""
-
-    # НАЧИНАЕМ С РАССЫЛКИ!
     current_service = "outreach"
 
     while True:
@@ -539,47 +524,40 @@ async def main_worker():
                 success = await run_outreach_sender()
                 if success:
                     logger.info("⏰ Ждём 4 часа перед сканированием...")
-                    await asyncio.sleep(4 * 3600)  # 4 часа
+                    await asyncio.sleep(4 * 3600)
                 else:
                     logger.info("⏰ Ошибка рассылки, ждём 1 час...")
-                    await asyncio.sleep(3600)  # 1 час при ошибке
+                    await asyncio.sleep(3600)
 
-                # Переключаем на сканирование
                 current_service = "scanner"
 
-            else:  # scanner
+            else:
                 logger.info("🔄 ЦИКЛ: Запускаем СКАНИРОВАНИЕ")
                 success = await run_lead_scanner()
                 if success:
                     logger.info("⏰ Ждём 4 часа перед рассылкой...")
-                    await asyncio.sleep(4 * 3600)  # 4 часа
+                    await asyncio.sleep(4 * 3600)
                 else:
                     logger.info("⏰ Ошибка сканирования, ждём 1 час...")
-                    await asyncio.sleep(3600)  # 1 час при ошибке
+                    await asyncio.sleep(3600)
 
-                # Переключаем на рассылку
                 current_service = "outreach"
 
         except Exception as e:
             logger.error(f"💥 Критическая ошибка в главном цикле: {e}")
-            await asyncio.sleep(3600)  # 1 час при критической ошибке
+            await asyncio.sleep(3600)
 
 # === Главная функция ===
 async def main():
-    logger.info("🚀 ЗАПУСК CRYPTOHUNTER MINER v1.8 - ЕЖЕЧАСНЫЕ НАЧИСЛЕНИЯ")
+    logger.info("🚀 ЗАПУСК CRYPTOHUNTER MINER v2.0 - РАБОЧАЯ СИСТЕМА ОПЛАТЫ")
 
     await create_tables()
 
-    # Запуск фоновых сервисов
-    asyncio.create_task(start_bot_background())      # Постоянно
-    asyncio.create_task(scheduler())                 # По расписанию (НАЧИСЛЕНИЯ!)
-    # Если start_outreach в bot.outreach требует bot instance, учти: я предполагаю он сам создаёт нужное
-    asyncio.create_task(start_outreach())            # Outreach из bot.outreach
-
-    # Запуск главного рабочего цикла (РАССЫЛКА ПЕРВАЯ!)
+    asyncio.create_task(start_bot_background())
+    asyncio.create_task(scheduler())
+    asyncio.create_task(start_outreach())
     asyncio.create_task(main_worker())
 
-    # Веб-сервер
     import uvicorn
     port = int(os.getenv("PORT", 8080))
     logger.info(f"🌐 ЗАПУСК СЕРВЕРА НА ПОРТУ {port}")
