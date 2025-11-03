@@ -1,4 +1,4 @@
-# main.py — v1.3 — ОДНА СЕССИЯ ДЛЯ ВСЕГО
+# main.py — v1.5 — ПООЧЕРЕДНЫЙ ЗАПУСК 4+4 ЧАСА
 import os
 import asyncio
 import logging
@@ -380,60 +380,100 @@ async def start_bot_background():
             logger.error(f"❌ Ошибка бота: {e}")
             await asyncio.sleep(15)
 
-# === Lead Scanner (каждые 4 часа) ===
-async def start_lead_scanner():
-    while True:
-        try:
-            logger.info("🔍 ЗАПУСК LEAD SCANNER (каждые 4 часа)")
-            
-            from telethon import TelegramClient
-            from lead_scanner import run_scanner
-            
-            API_ID = int(os.getenv("API_ID"))
-            API_HASH = os.getenv("API_HASH")
-            
-            # ИСПОЛЬЗУЕМ СУЩЕСТВУЮЩУЮ СЕССИЮ
-            client = TelegramClient("scanner_session", API_ID, API_HASH)
-            
-            await client.start()
-            await run_scanner(client)
-            await client.disconnect()
-            
-            logger.info("✅ Сканирование завершено. Ждём 4 часа...")
-            await asyncio.sleep(4 * 3600)  # 4 часа
-            
-        except Exception as e:
-            logger.error(f"❌ Lead Scanner упал: {e}")
-            await asyncio.sleep(3600)  # 1 час при ошибке
+# === Lead Scanner ===
+async def run_lead_scanner():
+    """Запуск сканера лидов"""
+    try:
+        logger.info("🔍 ЗАПУСК LEAD SCANNER...")
+        
+        from telethon import TelegramClient
+        from lead_scanner import run_scanner
+        
+        API_ID = int(os.getenv("API_ID"))
+        API_HASH = os.getenv("API_HASH")
+        
+        # Используем сессию
+        client = TelegramClient("scanner_session", API_ID, API_HASH)
+        
+        await client.start()
+        await run_scanner(client)
+        await client.disconnect()
+        
+        logger.info("✅ Сканирование завершено")
+        return True
+        
+    except Exception as e:
+        logger.error(f"❌ Lead Scanner упал: {e}")
+        return False
 
-# === Outreach Sender (каждые 3 часа) ===
-async def start_outreach_sender():
+# === Outreach Sender ===
+async def run_outreach_sender():
+    """Запуск рассылки"""
+    try:
+        logger.info("📨 ЗАПУСК OUTREACH SENDER...")
+        
+        from outreach_sender import safe_send
+        await safe_send()
+        
+        logger.info("✅ Рассылка завершена")
+        return True
+        
+    except Exception as e:
+        logger.error(f"❌ Outreach Sender упал: {e}")
+        return False
+
+# === ОСНОВНОЙ ЦИКЛ ПООЧЕРЕДНОГО ЗАПУСКА ===
+async def main_worker():
+    """Главный рабочий цикл: 4 часа сканирование → 4 часа рассылка"""
+    
+    # Начинаем со сканирования
+    current_service = "scanner"
+    
     while True:
         try:
-            logger.info("📨 ЗАПУСК OUTREACH SENDER (каждые 3 часа)")
-            
-            from outreach_sender import safe_send
-            await safe_send()
-            
-            logger.info("✅ Рассылка завершена. Ждём 3 часа...")
-            await asyncio.sleep(3 * 3600)  # 3 часа
-            
+            if current_service == "scanner":
+                logger.info("🔄 ЦИКЛ: Запускаем сканирование лидов")
+                success = await run_lead_scanner()
+                if success:
+                    logger.info("⏰ Ждём 4 часа перед рассылкой...")
+                    await asyncio.sleep(4 * 3600)  # 4 часа
+                else:
+                    logger.info("⏰ Ошибка сканирования, ждём 1 час...")
+                    await asyncio.sleep(3600)  # 1 час при ошибке
+                
+                # Переключаем на рассылку
+                current_service = "outreach"
+                
+            else:  # outreach
+                logger.info("🔄 ЦИКЛ: Запускаем рассылку")
+                success = await run_outreach_sender()
+                if success:
+                    logger.info("⏰ Ждём 4 часа перед сканированием...")
+                    await asyncio.sleep(4 * 3600)  # 4 часа
+                else:
+                    logger.info("⏰ Ошибка рассылки, ждём 1 час...")
+                    await asyncio.sleep(3600)  # 1 час при ошибке
+                
+                # Переключаем на сканирование
+                current_service = "scanner"
+                
         except Exception as e:
-            logger.error(f"❌ Outreach Sender упал: {e}")
-            await asyncio.sleep(3600)  # 1 час при ошибке
+            logger.error(f"💥 Критическая ошибка в главном цикле: {e}")
+            await asyncio.sleep(3600)  # 1 час при критической ошибке
 
 # === Главная функция ===
 async def main():
-    logger.info("🚀 ЗАПУСК CRYPTOHUNTER MINER v1.3 - ОДНА СЕССИЯ")
+    logger.info("🚀 ЗАПУСК CRYPTOHUNTER MINER v1.5 - ПООЧЕРЕДНЫЙ ЦИКЛ 4+4 ЧАСА")
 
     await create_tables()
 
-    # Запуск всех сервисов
+    # Запуск фоновых сервисов
     asyncio.create_task(start_bot_background())      # Постоянно
     asyncio.create_task(scheduler())                 # По расписанию
     asyncio.create_task(start_outreach())            # Outreach из bot.outreach
-    asyncio.create_task(start_lead_scanner())        # Каждые 4 часа
-    asyncio.create_task(start_outreach_sender())     # Каждые 3 часа
+    
+    # Запуск главного рабочего цикла
+    asyncio.create_task(main_worker())
 
     # Веб-сервер
     import uvicorn
