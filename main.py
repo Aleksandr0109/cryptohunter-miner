@@ -1,4 +1,4 @@
-# main.py — v2.1 — ФИКС СЕССИЙ TELEGRAM
+# main.py — v2.2 — ФИКС ИМПОРТОВ И HTTPS
 import os
 import asyncio
 import logging
@@ -23,12 +23,15 @@ from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 from aiogram.fsm.storage.memory import MemoryStorage
 
+# === КРИТИЧЕСКИЕ ИМПОРТЫ ДЛЯ TELEGRAM ===
+from telethon import TelegramClient
+from telethon.errors import FloodWaitError, AuthKeyError
+
 # === CONFIG ===
 from config import BOT_TOKEN, BOT_USERNAME, TONKEEPER_API_KEY
 
 from bot.handlers import router
 from bot.admin import router as admin_router
-from bot.outreach import start_outreach
 
 import aiohttp
 from sqlalchemy import select
@@ -44,6 +47,9 @@ logging.basicConfig(
     handlers=[logging.StreamHandler(sys.stdout)]
 )
 logger = logging.getLogger(__name__)
+
+# === ПРИНУДИТЕЛЬНЫЙ HTTPS ДЛЯ WEB APP ===
+WEBAPP_BASE_URL = "https://cryptohunter-miner-production.up.railway.app"
 
 # === БЕЗОПАСНОЕ СОЗДАНИЕ TELEGRAM КЛИЕНТОВ ===
 async def create_safe_telethon_client(session_name, api_id, api_hash, phone=None):
@@ -518,7 +524,6 @@ async def run_lead_scanner():
     try:
         logger.info("🔍 ЗАПУСК LEAD SCANNER...")
 
-        from telethon import TelegramClient
         from lead_scanner import run_scanner
 
         API_ID = int(os.getenv("API_ID"))
@@ -543,7 +548,6 @@ async def run_outreach_sender():
     try:
         logger.info("📨 ЗАПУСК OUTREACH SENDER...")
 
-        from telethon import TelegramClient
         from outreach_sender import safe_send
 
         API_ID = int(os.getenv("API_ID"))
@@ -597,7 +601,7 @@ async def main_worker():
 
 # === Главная функция ===
 async def main():
-    logger.info("🚀 ЗАПУСК CRYPTOHUNTER MINER v2.1 - ФИКС СЕССИЙ TELEGRAM")
+    logger.info("🚀 ЗАПУСК CRYPTOHUNTER MINER v2.2 - ФИКС ИМПОРТОВ И HTTPS")
 
     await create_tables()
 
