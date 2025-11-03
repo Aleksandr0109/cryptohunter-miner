@@ -1,21 +1,13 @@
-# main.py — v0.9.0 FULL + LEAD_SCANNER & OUTREACH_SENDER
+# main.py — v1.1 — ФИКСИРОВАННЫЕ ИНТЕРВАЛЫ
 import os
 import asyncio
 import logging
 import sys
 from pathlib import Path
-import json
-from decimal import Decimal
-import urllib.parse
-import qrcode
-import base64
-from io import BytesIO
 
-# УСТАНОВКА EVENT LOOP ДО ВСЕХ ИМПОРТОВ
+# УСТАНОВКА EVENT LOOP
 import uvloop
 asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
-loop = asyncio.new_event_loop()
-asyncio.set_event_loop(loop)
 
 from fastapi.responses import JSONResponse, Response, FileResponse
 from fastapi import FastAPI, Request, HTTPException
@@ -342,9 +334,9 @@ async def daily_accrual():
                 user.total_earned += daily
                 user.mining_speed = ProfitCalculator.mining_speed(invested)
             await db.commit()
-            logger.info("Ежедневные начисления выполнены")
+            logger.info("✅ Ежедневные начисления выполнены")
     except Exception as e:
-        logger.error(f"Ошибка начислений: {e}")
+        logger.error(f"❌ Ошибка начислений: {e}")
 
 # === Планировщик ===
 async def scheduler():
@@ -358,63 +350,83 @@ async def scheduler():
 async def create_tables():
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
-    logger.info("ТАБЛИЦЫ БД СОЗДАНЫ")
+    logger.info("✅ ТАБЛИЦЫ БД СОЗДАНЫ")
 
 # === Бот в фоне ===
 async def start_bot_background():
     while True:
         try:
-            logger.info("ЗАПУСК БОТА...")
+            logger.info("🤖 ЗАПУСК ОСНОВНОГО БОТА...")
             bot = Bot(token=BOT_TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
             dp = Dispatcher(storage=MemoryStorage())
             dp.include_router(router)
             dp.include_router(admin_router)
             await dp.start_polling(bot)
         except Exception as e:
-            logger.error(f"Ошибка бота: {e}")
+            logger.error(f"❌ Ошибка бота: {e}")
             await asyncio.sleep(15)
 
-# === Lead Scanner ===
+# === Lead Scanner (каждые 4 часа) ===
 async def start_lead_scanner():
-    # Импортируем здесь, после установки event loop
-    from lead_scanner import main as lead_scanner_main
     while True:
         try:
-            logger.info("ЗАПУСК LEAD SCANNER")
-            await lead_scanner_main()
+            logger.info("🔍 ЗАПУСК LEAD SCANNER (каждые 4 часа)")
+            
+            from telethon import TelegramClient
+            from lead_scanner import run_scanner
+            
+            API_ID = int(os.getenv("API_ID"))
+            API_HASH = os.getenv("API_HASH")
+            PHONE = os.getenv("PHONE")
+            
+            # Уникальная сессия для каждого запуска
+            session_name = f"scanner_{int(asyncio.get_event_loop().time())}"
+            client = TelegramClient(session_name, API_ID, API_HASH)
+            
+            await client.start(phone=PHONE)
+            await run_scanner()
+            await client.disconnect()
+            
+            logger.info("✅ Сканирование завершено. Ждём 4 часа...")
+            await asyncio.sleep(4 * 3600)  # 4 часа
+            
         except Exception as e:
-            logger.error(f"Lead Scanner упал: {e}")
-        await asyncio.sleep(30)
+            logger.error(f"❌ Lead Scanner упал: {e}")
+            await asyncio.sleep(3600)  # 1 час при ошибке
 
-# === Outreach Sender ===
+# === Outreach Sender (каждые 3 часа) ===
 async def start_outreach_sender():
-    # Импортируем здесь, после установки event loop
-    from outreach_sender import main as outreach_sender_main
     while True:
         try:
-            logger.info("ЗАПУСК OUTREACH SENDER")
-            await outreach_sender_main()
+            logger.info("📨 ЗАПУСК OUTREACH SENDER (каждые 3 часа)")
+            
+            from outreach_sender import safe_send
+            await safe_send()
+            
+            logger.info("✅ Рассылка завершена. Ждём 3 часа...")
+            await asyncio.sleep(3 * 3600)  # 3 часа
+            
         except Exception as e:
-            logger.error(f"Outreach Sender упал: {e}")
-        await asyncio.sleep(45)
+            logger.error(f"❌ Outreach Sender упал: {e}")
+            await asyncio.sleep(3600)  # 1 час при ошибке
 
 # === Главная функция ===
 async def main():
-    logger.info("ЗАПУСК CRYPTOHUNTER MINER v0.9.0")
+    logger.info("🚀 ЗАПУСК CRYPTOHUNTER MINER v1.1")
 
     await create_tables()
 
-    # Запуск всех фоновых задач
-    asyncio.create_task(start_bot_background())
-    asyncio.create_task(scheduler())
-    asyncio.create_task(start_outreach())
-    asyncio.create_task(start_lead_scanner())        # ← НОВОЕ
-    asyncio.create_task(start_outreach_sender())     # ← НОВОЕ
+    # Запуск всех сервисов
+    asyncio.create_task(start_bot_background())      # Постоянно
+    asyncio.create_task(scheduler())                 # По расписанию
+    asyncio.create_task(start_outreach())            # Outreach из bot.outreach
+    asyncio.create_task(start_lead_scanner())        # Каждые 4 часа
+    asyncio.create_task(start_outreach_sender())     # Каждые 3 часа
 
     # Веб-сервер
     import uvicorn
     port = int(os.getenv("PORT", 5000))
-    logger.info(f"ЗАПУСК СЕРВЕРА НА ПОРТУ {port}")
+    logger.info(f"🌐 ЗАПУСК СЕРВЕРА НА ПОРТУ {port}")
 
     config = uvicorn.Config(app, host="0.0.0.0", port=port, log_level="info")
     server = uvicorn.Server(config)
