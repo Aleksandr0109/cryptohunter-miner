@@ -14,7 +14,7 @@ import os
 # === ЗАГРУЗКА .ENV ===
 load_dotenv()
 API_ID = int(os.getenv("API_ID"))
-API_HASH = os.getenv("API_HASH"))
+API_HASH = os.getenv("API_HASH")
 
 # === ЛОГИ ===
 logging.basicConfig(
