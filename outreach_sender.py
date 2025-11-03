@@ -1,4 +1,4 @@
-# outreach_sender.py — v3.2 — RAILWAY FIX + БЕЗОПАСНАЯ РАССЫЛКА
+# outreach_sender.py — v3.3 — ФИКСИРОВАННЫЙ ИНТЕРВАЛ
 import asyncio
 import logging
 import random
@@ -28,7 +28,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger("outreach")
 
-# === УМНЫЕ ШАБЛОНЫ (БЕЗ ИЗМЕНЕНИЙ) ===
+# === УМНЫЕ ШАБЛОНЫ ===
 def get_template_for_lead(lead):
     keywords = [k.upper() for k in (lead.keywords_list or [])]
 
@@ -91,13 +91,14 @@ def get_template_for_lead(lead):
         ]
         return random.choice(templates)
 
-
 # === БЕЗОПАСНАЯ РАССЫЛКА ===
 async def safe_send():
-    # ← КЛИЕНТ СОЗДАЁТСЯ ТОЛЬКО ЗДЕСЬ!
-    client = TelegramClient("outreach_session", API_ID, API_HASH)
+    # Уникальная сессия для каждого запуска
+    session_name = f"outreach_{int(asyncio.get_event_loop().time())}"
+    client = TelegramClient(session_name, API_ID, API_HASH)
+    
     await client.start(phone=PHONE)
-    logger.info("Рассылка запущена — v3.2")
+    logger.info("📨 Рассылка запущена — v3.3")
 
     async with AsyncSessionLocal() as db:
         leads = (await db.execute(
@@ -107,7 +108,7 @@ async def safe_send():
         )).scalars().all()
 
         if not leads:
-            logger.info("Нет новых лидов")
+            logger.info("ℹ️ Нет новых лидов для рассылки")
             await client.disconnect()
             return
 
@@ -116,7 +117,7 @@ async def safe_send():
             try:
                 msg = get_template_for_lead(lead)
                 await client.send_message(lead.user_id, msg)
-                logger.info(f"ОТПРАВЛЕНО → {lead.user_id} | @{lead.username or '—'}")
+                logger.info(f"✅ ОТПРАВЛЕНО → {lead.user_id} | @{lead.username or '—'}")
 
                 lead.conversion_status = "contacted"
                 lead.contact_attempts += 1
@@ -127,30 +128,29 @@ async def safe_send():
                 await asyncio.sleep(random.uniform(35, 45))
 
             except FloodWaitError as e:
-                logger.warning(f"Флуд! Ждём {e.seconds} сек...")
+                logger.warning(f"⏳ Флуд! Ждём {e.seconds} сек...")
                 await asyncio.sleep(e.seconds + 10)
 
             except Exception as e:
-                logger.error(f"Ошибка → {lead.user_id}: {e}")
+                logger.error(f"❌ Ошибка → {lead.user_id}: {e}")
                 lead.conversion_status = "failed"
                 await db.commit()
 
-        logger.info(f"РАССЫЛКА ЗАВЕРШЕНА: {sent} сообщений")
+        logger.info(f"📊 РАССЫЛКА ЗАВЕРШЕНА: {sent} сообщений")
+    
     await client.disconnect()
 
-
-# === ГЛАВНЫЙ ЦИКЛ ===
+# === ГЛАВНЫЙ ЦИКЛ (для standalone запуска) ===
 async def main():
-    logger.info("OUTREACH SENDER v3.2 — STARTED")
+    logger.info("📨 OUTREACH SENDER v3.3 — STARTED")
     while True:
         try:
             await safe_send()
-            logger.info("Ждём 3 часа до следующей волны...")
-            await asyncio.sleep(3 * 3600)
+            logger.info("⏰ Ждём 3 часа до следующей волны...")
+            await asyncio.sleep(3 * 3600)  # 3 часа
         except Exception as e:
-            logger.error(f"КРИТИЧНАЯ ОШИБКА: {e}")
-            await asyncio.sleep(3600)
-
+            logger.error(f"💥 КРИТИЧНАЯ ОШИБКА: {e}")
+            await asyncio.sleep(3600)  # 1 час при ошибке
 
 if __name__ == "__main__":
     asyncio.run(main())
