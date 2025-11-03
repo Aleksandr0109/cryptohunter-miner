@@ -1,4 +1,4 @@
-# main.py — v2.0 — РАБОЧАЯ СИСТЕМА ОПЛАТЫ + ЕЖЕЧАСНЫЕ НАЧИСЛЕНИЯ
+# main.py — v2.1 — ФИКС СЕССИЙ TELEGRAM
 import os
 import asyncio
 import logging
@@ -44,6 +44,45 @@ logging.basicConfig(
     handlers=[logging.StreamHandler(sys.stdout)]
 )
 logger = logging.getLogger(__name__)
+
+# === БЕЗОПАСНОЕ СОЗДАНИЕ TELEGRAM КЛИЕНТОВ ===
+async def create_safe_telethon_client(session_name, api_id, api_hash, phone=None):
+    """Безопасное создание Telethon клиента с обработкой ошибок сессии"""
+    session_file = f"{session_name}.session"
+    
+    # Если сессия существует и есть ошибка авторизации - удаляем её
+    if os.path.exists(session_file):
+        try:
+            # Пробуем подключиться с существующей сессией
+            client = TelegramClient(session_name, api_id, api_hash)
+            await client.connect()
+            
+            # Проверяем валидность сессии
+            if not await client.is_user_authorized():
+                raise Exception("Session not authorized")
+                
+            logger.info(f"✅ Используем существующую сессию: {session_name}")
+            return client
+            
+        except Exception as e:
+            logger.warning(f"❌ Ошибка сессии {session_name}: {e}. Удаляем и создаем новую...")
+            try:
+                await client.disconnect()
+            except:
+                pass
+            if os.path.exists(session_file):
+                os.remove(session_file)
+    
+    # Создаем новую сессию
+    logger.info(f"🆕 Создаем новую сессию: {session_name}")
+    client = TelegramClient(session_name, api_id, api_hash)
+    
+    if phone:
+        await client.start(phone=phone)
+    else:
+        await client.start()
+        
+    return client
 
 # === FastAPI ===
 app = FastAPI(title="CryptoHunter Miner")
@@ -484,9 +523,10 @@ async def run_lead_scanner():
 
         API_ID = int(os.getenv("API_ID"))
         API_HASH = os.getenv("API_HASH")
+        PHONE = os.getenv("PHONE")
 
-        client = TelegramClient("scanner_session", API_ID, API_HASH)
-        await client.start()
+        # Используем безопасное создание клиента
+        client = await create_safe_telethon_client("scanner_session", API_ID, API_HASH, PHONE)
         await run_scanner(client)
         await client.disconnect()
 
@@ -503,8 +543,16 @@ async def run_outreach_sender():
     try:
         logger.info("📨 ЗАПУСК OUTREACH SENDER...")
 
+        from telethon import TelegramClient
         from outreach_sender import safe_send
-        await safe_send()
+
+        API_ID = int(os.getenv("API_ID"))
+        API_HASH = os.getenv("API_HASH")
+
+        # Используем безопасное создание клиента
+        client = await create_safe_telethon_client("scanner_session", API_ID, API_HASH)
+        await safe_send(client)  # передаем клиент как аргумент
+        await client.disconnect()
 
         logger.info("✅ Рассылка завершена")
         return True
@@ -549,13 +597,12 @@ async def main_worker():
 
 # === Главная функция ===
 async def main():
-    logger.info("🚀 ЗАПУСК CRYPTOHUNTER MINER v2.0 - РАБОЧАЯ СИСТЕМА ОПЛАТЫ")
+    logger.info("🚀 ЗАПУСК CRYPTOHUNTER MINER v2.1 - ФИКС СЕССИЙ TELEGRAM")
 
     await create_tables()
 
     asyncio.create_task(start_bot_background())
     asyncio.create_task(scheduler())
-    asyncio.create_task(start_outreach())
     asyncio.create_task(main_worker())
 
     import uvicorn
