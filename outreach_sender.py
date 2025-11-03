@@ -1,4 +1,4 @@
-# outreach_sender.py — v3.4 — ОДНА СЕССИЯ
+# outreach_sender.py — v3.5 — ПРИНИМАЕТ КЛИЕНТ
 import asyncio
 import logging
 import random
@@ -13,8 +13,6 @@ import os
 
 # === ЗАГРУЗКА .ENV ===
 load_dotenv()
-API_ID = int(os.getenv("API_ID"))
-API_HASH = os.getenv("API_HASH")
 
 # === ЛОГИ ===
 logging.basicConfig(
@@ -31,7 +29,7 @@ def get_template_for_lead(lead):
     if any(w in keywords for w in ["ТРЕЙДИНГ", "TRADING", "ТРЕЙДЕР", "TRADER", "БИРЖА", "BINANCE", "BYBIT", "ИНВЕСТИЦИИ"]):
         return (
             "Вижу, ты активно торгуешь! 💹\n"
-            "Устал от рыночной волатильности?\n\n"
+            "Устал от рыночной волатильности?\n"
             "Наша TON ферма дает стабильные 25% в месяц\n"
             "без рисков торговли.\n\n"
             "💰 Твой депозит в 1000 TON будет приносить\n"
@@ -88,12 +86,9 @@ def get_template_for_lead(lead):
         return random.choice(templates)
 
 # === БЕЗОПАСНАЯ РАССЫЛКА ===
-async def safe_send():
-    # ИСПОЛЬЗУЕМ ТУ ЖЕ СЕССИЮ ЧТО И ДЛЯ СКАНИРОВАНИЯ
-    client = TelegramClient("scanner_session", API_ID, API_HASH)
-    
-    await client.start()
-    logger.info("📨 Рассылка запущена — v3.4")
+async def safe_send(client):
+    """Принимает готовый Telethon клиент"""
+    logger.info("📨 Рассылка запущена — v3.5")
 
     async with AsyncSessionLocal() as db:
         leads = (await db.execute(
@@ -104,7 +99,6 @@ async def safe_send():
 
         if not leads:
             logger.info("ℹ️ Нет новых лидов для рассылки")
-            await client.disconnect()
             return
 
         sent = 0
@@ -132,15 +126,24 @@ async def safe_send():
                 await db.commit()
 
         logger.info(f"📊 РАССЫЛКА ЗАВЕРШЕНА: {sent} сообщений")
-    
-    await client.disconnect()
 
 # === ГЛАВНЫЙ ЦИКЛ (для standalone запуска) ===
 async def main():
-    logger.info("📨 OUTREACH SENDER v3.4 — STARTED")
+    logger.info("📨 OUTREACH SENDER v3.5 — STARTED")
+    
+    from telethon import TelegramClient
+    API_ID = int(os.getenv("API_ID"))
+    API_HASH = os.getenv("API_HASH")
+    
     while True:
         try:
-            await safe_send()
+            # Создаем клиент для standalone режима
+            client = TelegramClient("scanner_session", API_ID, API_HASH)
+            await client.start()
+            
+            await safe_send(client)
+            await client.disconnect()
+            
             logger.info("⏰ Ждём 3 часа до следующей волны...")
             await asyncio.sleep(3 * 3600)  # 3 часа
         except Exception as e:
