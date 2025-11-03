@@ -1,4 +1,5 @@
-# main.py — v1.7 — ЕЖЕЧАСНЫЕ И ЕЖЕДНЕВНЫЕ НАЧИСЛЕНИЯ
+
+# main.py — v1.8 — ЕЖЕЧАСНЫЕ И ЕЖЕДНЕВНЫЕ НАЧИСЛЕНИЯ (полный файл, referral fixed to use BOT_USERNAME)
 import os
 import asyncio
 import logging
@@ -23,9 +24,13 @@ from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 from aiogram.fsm.storage.memory import MemoryStorage
 
-from config import BOT_TOKEN, TONKEEPER_API_KEY
+# === CONFIG ===
+# Ensure you have BOT_TOKEN and BOT_USERNAME in your .env and config.py exposes them
+from config import BOT_TOKEN, BOT_USERNAME, TONKEEPER_API_KEY
+
 from bot.handlers import router
 from bot.admin import router as admin_router
+# start_outreach should be an async function that can be awaited or scheduled
 from bot.outreach import start_outreach
 
 import aiohttp
@@ -66,7 +71,11 @@ async def allow_telegram_webview(request: Request, call_next):
     return await call_next(request)
 
 # === Tonkeeper ===
-tonkeeper = TonkeeperAPI()
+try:
+    tonkeeper = TonkeeperAPI()
+except Exception as e:
+    logger.error(f"Ошибка инициализации TonkeeperAPI: {e}")
+    tonkeeper = None
 
 # === Статические файлы ===
 app.mount("/webapp", StaticFiles(directory="bot/webapp"), name="webapp")
@@ -158,7 +167,7 @@ async def api_dashboard(request: Request):
         invested = user.invested_amount or Decimal('0')
         balance = user.free_mining_balance or Decimal('0')
         speed = ProfitCalculator.mining_speed(invested)
-        
+
         daily_inv = ProfitCalculator.investment_daily(invested)
         daily_free = ProfitCalculator.free_mining_daily(invested)
         total_daily = daily_inv + daily_free
@@ -208,7 +217,9 @@ async def api_qr(data: dict, request: Request):
         import base64
         from io import BytesIO
         from decimal import Decimal
-        
+
+        if tonkeeper is None:
+            raise RuntimeError("Tonkeeper not initialized")
         address = await tonkeeper.get_address()
         url = f"ton://{address}?amount={int(amount * 1e9)}"
         qr = qrcode.QRCode(version=1, box_size=10, border=4)
@@ -313,28 +324,40 @@ async def api_check(request: Request):
 # === API: Рефералка ===
 @app.post("/api/referral")
 async def api_referral(request: Request):
+    from decimal import Decimal
     user_info = validate_init_data(request.headers.get("X-Telegram-WebApp-Init-Data"))
     user_id = user_info["user_id"] if user_info else 8089114323
-    
+
     async with AsyncSessionLocal() as db:
         user = await db.get(User, user_id)
         if not user:
-            # ←←←←  СОЗДАЁМ ПОЛЬЗОВАТЕЛЯ, ЕСЛИ ЕГО НЕТ
             user = User(
                 user_id=user_id,
                 username=user_info.get("username", "anon") if user_info else "anon",
-                invested_amount=0,
-                free_mining_balance=15.5,
-                total_earned=0
+                invested_amount=Decimal('0'),
+                free_mining_balance=Decimal('15.5'),
+                total_earned=Decimal('0')
             )
             db.add(user)
-            await db.flush()        # получаем user.id сразу
+            await db.flush()
             await db.commit()
 
-        # Теперь user_id 100% есть
-        link = f"https://t.me/CryptoHunterTonBot?start=ref_{user.user_id}"
+        # Получаем username бота: сначала из .env/config, потом fallback к get_me()
+        bot_username = BOT_USERNAME
+        if not bot_username:
+            try:
+                bot = Bot(token=BOT_TOKEN)
+                me = await bot.get_me()
+                bot_username = me.username
+                await bot.session.close()
+            except Exception as e:
+                logger.error(f"Ошибка при получении username бота: {e}")
+                bot_username = "unknown_bot"
 
-        # статистика (как было)
+        # Формируем ссылку
+        link = f"https://t.me/{bot_username}?start=ref_{user.user_id}"
+
+        # Статистика (direct and level2)
         direct_result = await db.execute(
             select(Referral).where(Referral.referrer_id == user.user_id, Referral.level == 1)
         )
@@ -346,7 +369,8 @@ async def api_referral(request: Request):
             l2 = await db.execute(
                 select(Referral).where(Referral.referrer_id == ref.referred_id, Referral.level == 2)
             )
-            level2_count += l2.scalar_one_or_none() and 1 or len(l2.scalars().all())
+            level2_items = l2.scalars().all()
+            level2_count += len(level2_items)
             total_income += ref.bonus_paid or Decimal('0')
 
         return {
@@ -364,11 +388,11 @@ async def hourly_accrual():
             users = (await db.execute(select(User))).scalars().all()
             total_accrued = 0
             users_count = 0
-            
+
             for user in users:
                 from decimal import Decimal
                 invested = user.invested_amount or Decimal('0')
-                
+
                 if invested > 0:  # Только у кого есть инвестиции
                     hourly = ProfitCalculator.total_daily_income(invested) / 24
                     if hourly > 0:
@@ -376,14 +400,14 @@ async def hourly_accrual():
                         user.total_earned += hourly
                         total_accrued += float(hourly)
                         users_count += 1
-            
+
             await db.commit()
-            
+
             if users_count > 0:
                 logger.info(f"✅ Ежечасные начисления: {users_count} пользователей, {total_accrued:.6f} TON")
             else:
                 logger.info("ℹ️ Нет пользователей с инвестициями для начислений")
-                
+
     except Exception as e:
         logger.error(f"❌ Ошибка ежечасных начислений: {e}")
 
@@ -395,11 +419,11 @@ async def daily_accrual():
             users = (await db.execute(select(User))).scalars().all()
             total_accrued = 0
             users_count = 0
-            
+
             for user in users:
                 from decimal import Decimal
                 invested = user.invested_amount or Decimal('0')
-                
+
                 if invested > 0:
                     # Бонусные начисления (1% от депозита)
                     daily_bonus = invested * Decimal('0.01')
@@ -407,14 +431,14 @@ async def daily_accrual():
                     user.total_earned += daily_bonus
                     total_accrued += float(daily_bonus)
                     users_count += 1
-            
+
             await db.commit()
-            
+
             if users_count > 0:
                 logger.info(f"🎁 Ежедневные бонусы: {users_count} пользователей, {total_accrued:.6f} TON")
             else:
                 logger.info("ℹ️ Нет пользователей для ежедневных бонусов")
-                
+
     except Exception as e:
         logger.error(f"❌ Ошибка ежедневных начислений: {e}")
 
@@ -422,15 +446,15 @@ async def daily_accrual():
 async def scheduler():
     """Улучшенный планировщик с ежечасными и ежедневными начислениями"""
     import aioschedule
-    
+
     # Ежечасные начисления (каждый час)
     aioschedule.every().hour.at(":00").do(lambda: asyncio.create_task(hourly_accrual()))
-    
+
     # Ежедневные бонусные начисления (в полночь)
     aioschedule.every().day.at("00:00").do(lambda: asyncio.create_task(daily_accrual()))
-    
+
     logger.info("⏰ Планировщик запущен: ежечасные и ежедневные начисления")
-    
+
     while True:
         try:
             await aioschedule.run_pending()
@@ -464,23 +488,23 @@ async def run_lead_scanner():
     """Запуск сканера лидов"""
     try:
         logger.info("🔍 ЗАПУСК LEAD SCANNER...")
-        
+
         from telethon import TelegramClient
         from lead_scanner import run_scanner
-        
+
         API_ID = int(os.getenv("API_ID"))
         API_HASH = os.getenv("API_HASH")
-        
+
         # Используем сессию
         client = TelegramClient("scanner_session", API_ID, API_HASH)
-        
+
         await client.start()
         await run_scanner(client)
         await client.disconnect()
-        
+
         logger.info("✅ Сканирование завершено")
         return True
-        
+
     except Exception as e:
         logger.error(f"❌ Lead Scanner упал: {e}")
         return False
@@ -490,13 +514,13 @@ async def run_outreach_sender():
     """Запуск рассылки"""
     try:
         logger.info("📨 ЗАПУСК OUTREACH SENDER...")
-        
+
         from outreach_sender import safe_send
         await safe_send()
-        
+
         logger.info("✅ Рассылка завершена")
         return True
-        
+
     except Exception as e:
         logger.error(f"❌ Outreach Sender упал: {e}")
         return False
@@ -504,10 +528,10 @@ async def run_outreach_sender():
 # === ОСНОВНОЙ ЦИКЛ: РАССЫЛКА ПЕРВАЯ → СКАНИРОВАНИЕ ===
 async def main_worker():
     """Главный рабочий цикл: 4 часа рассылка → 4 часа сканирование"""
-    
+
     # НАЧИНАЕМ С РАССЫЛКИ!
     current_service = "outreach"
-    
+
     while True:
         try:
             if current_service == "outreach":
@@ -519,10 +543,10 @@ async def main_worker():
                 else:
                     logger.info("⏰ Ошибка рассылки, ждём 1 час...")
                     await asyncio.sleep(3600)  # 1 час при ошибке
-                
+
                 # Переключаем на сканирование
                 current_service = "scanner"
-                
+
             else:  # scanner
                 logger.info("🔄 ЦИКЛ: Запускаем СКАНИРОВАНИЕ")
                 success = await run_lead_scanner()
@@ -532,25 +556,26 @@ async def main_worker():
                 else:
                     logger.info("⏰ Ошибка сканирования, ждём 1 час...")
                     await asyncio.sleep(3600)  # 1 час при ошибке
-                
+
                 # Переключаем на рассылку
                 current_service = "outreach"
-                
+
         except Exception as e:
             logger.error(f"💥 Критическая ошибка в главном цикле: {e}")
             await asyncio.sleep(3600)  # 1 час при критической ошибке
 
 # === Главная функция ===
 async def main():
-    logger.info("🚀 ЗАПУСК CRYPTOHUNTER MINER v1.7 - ЕЖЕЧАСНЫЕ НАЧИСЛЕНИЯ")
+    logger.info("🚀 ЗАПУСК CRYPTOHUNTER MINER v1.8 - ЕЖЕЧАСНЫЕ НАЧИСЛЕНИЯ")
 
     await create_tables()
 
     # Запуск фоновых сервисов
     asyncio.create_task(start_bot_background())      # Постоянно
     asyncio.create_task(scheduler())                 # По расписанию (НАЧИСЛЕНИЯ!)
+    # Если start_outreach в bot.outreach требует bot instance, учти: я предполагаю он сам создаёт нужное
     asyncio.create_task(start_outreach())            # Outreach из bot.outreach
-    
+
     # Запуск главного рабочего цикла (РАССЫЛКА ПЕРВАЯ!)
     asyncio.create_task(main_worker())
 
