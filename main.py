@@ -324,16 +324,23 @@ async def api_check(request: Request):
 # === API: Рефералка ===
 @app.post("/api/referral")
 async def api_referral(request: Request):
-    from decimal import Decimal
     user_info = validate_init_data(request.headers.get("X-Telegram-WebApp-Init-Data"))
-    user_id = user_info["user_id"] if user_info else 8089114323
+    user_id = None
+
+    if user_info and "user_id" in user_info:
+        user_id = int(user_info["user_id"])
+    else:
+        # fallback: берём ID тестового пользователя (если запрос не из Telegram WebApp)
+        user_id = 8089114323
 
     async with AsyncSessionLocal() as db:
         user = await db.get(User, user_id)
+
         if not user:
+            from decimal import Decimal
             user = User(
                 user_id=user_id,
-                username=user_info.get("username", "anon") if user_info else "anon",
+                username=(user_info.get("username") if user_info else "anon"),
                 invested_amount=Decimal('0'),
                 free_mining_balance=Decimal('15.5'),
                 total_earned=Decimal('0')
@@ -342,22 +349,14 @@ async def api_referral(request: Request):
             await db.flush()
             await db.commit()
 
-        # Получаем username бота: сначала из .env/config, потом fallback к get_me()
-        bot_username = BOT_USERNAME
-        if not bot_username:
-            try:
-                bot = Bot(token=BOT_TOKEN)
-                me = await bot.get_me()
-                bot_username = me.username
-                await bot.session.close()
-            except Exception as e:
-                logger.error(f"Ошибка при получении username бота: {e}")
-                bot_username = "unknown_bot"
+        # === Берём username бота из .env ===
+        bot_username = BOT_USERNAME.lstrip('@') if BOT_USERNAME else "unknown_bot"
 
-        # Формируем ссылку
+        # === Формируем ссылку без ошибок ===
         link = f"https://t.me/{bot_username}?start=ref_{user.user_id}"
 
-        # Статистика (direct and level2)
+        # === Подсчёт рефералов ===
+        from decimal import Decimal
         direct_result = await db.execute(
             select(Referral).where(Referral.referrer_id == user.user_id, Referral.level == 1)
         )
@@ -365,12 +364,12 @@ async def api_referral(request: Request):
 
         level2_count = 0
         total_income = Decimal('0')
+
         for ref in direct:
             l2 = await db.execute(
                 select(Referral).where(Referral.referrer_id == ref.referred_id, Referral.level == 2)
             )
-            level2_items = l2.scalars().all()
-            level2_count += len(level2_items)
+            level2_count += len(l2.scalars().all())
             total_income += ref.bonus_paid or Decimal('0')
 
         return {
@@ -379,6 +378,7 @@ async def api_referral(request: Request):
             "level2_count": level2_count,
             "income": float(total_income)
         }
+
 
 # === ЕЖЕЧАСНЫЕ начисления ===
 async def hourly_accrual():
