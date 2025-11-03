@@ -1,4 +1,4 @@
-// === script.js — ПОЛНАЯ ПРОДАКШЕН ВЕРСИЯ С МУЛЬТИЯЗЫЧНОСТЬЮ ===
+// === script.js — РАБОЧАЯ СИСТЕМА ОПЛАТЫ + МУЛЬТИЯЗЫЧНОСТЬ ===
 console.log("CryptoHunter Miner WebApp загружен");
 
 const tg = window.Telegram?.WebApp;
@@ -93,7 +93,11 @@ const translations = {
         "payment_pending": "Платеж еще не подтвержден",
         "no_pending_payments": "Нет ожидающих платежей",
         "referral_copied": "Реферальная ссылка скопирована!",
-        "connection_error": "Ошибка соединения"
+        "connection_error": "Ошибка соединения",
+        "deposit_created": "Депозит создан!",
+        "payment_checking": "Проверяем платеж...",
+        "payment_expired": "Время оплаты истекло",
+        "payment_error": "Ошибка проверки платежа"
     },
     en: {
         // Basic elements
@@ -171,12 +175,18 @@ const translations = {
         "payment_pending": "Payment not confirmed yet",
         "no_pending_payments": "No pending payments",
         "referral_copied": "Referral link copied!",
-        "connection_error": "Connection error"
+        "connection_error": "Connection error",
+        "deposit_created": "Deposit created!",
+        "payment_checking": "Checking payment...",
+        "payment_expired": "Payment time expired",
+        "payment_error": "Payment check error"
     }
 };
 
 let currentLanguage = 'ru';
 let currentUserData = null;
+let currentDepositId = null;
+let paymentCheckInterval = null;
 
 // === ПОЛУЧИТЬ initData ===
 function getInitData() {
@@ -245,6 +255,8 @@ function showSection(id) {
     } else if (id === 'invest') {
         const qrSection = document.getElementById('qr-section');
         if (qrSection) qrSection.style.display = 'none';
+        // Останавливаем проверку платежей при уходе с экрана инвестиций
+        stopPaymentChecking();
     }
 }
 
@@ -255,7 +267,7 @@ function showNotification(msgKey, type = 'info') {
         const message = translations[currentLanguage][msgKey] || msgKey;
         n.textContent = message;
         n.className = 'notification';
-        n.style.background = type === 'error' ? '#ff4444' : '#00ffcc';
+        n.style.background = type === 'error' ? '#ff4444' : type === 'success' ? '#00ff88' : '#00ccff';
         n.classList.add('show');
         setTimeout(() => n.classList.remove('show'), 3000);
     }
@@ -350,7 +362,7 @@ async function loadReferralData() {
             document.getElementById('ref-level2').textContent = refData.level2_count;
             document.getElementById('ref-income').textContent = Number(refData.income).toFixed(2);
             
-            const refLink = `https://t.me/${CONFIG.BOT_USERNAME}?start=ref_${refData.user_id}`;
+            const refLink = refData.link || `https://t.me/${CONFIG.BOT_USERNAME}?start=ref_${currentUserData?.user_id || 'unknown'}`;
             document.getElementById('ref-link').textContent = refLink;
         }
     } catch (e) {
@@ -362,7 +374,7 @@ async function loadReferralData() {
 window.calculate = async function() {
     const amount = parseFloat(document.getElementById('calc-amount').value);
     if (!amount || amount < CONFIG.MIN_INVEST) {
-        showNotification(`Введите сумму от ${CONFIG.MIN_INVEST} TON`, 'error');
+        showNotification(`min_invest_error`, 'error');
         return;
     }
 
@@ -446,8 +458,8 @@ function updateCalculatorResults(amount, data) {
     }
 }
 
-// === ГЕНЕРАЦИЯ QR ДЛЯ ОПЛАТЫ ===
-window.generateQR = async function() {
+// === СОЗДАНИЕ ДЕПОЗИТА ===
+window.createDeposit = async function() {
     const amountInput = document.getElementById("invest-amount");
     const amount = amountInput?.value?.trim();
 
@@ -462,48 +474,131 @@ window.generateQR = async function() {
     }
 
     try {
-        const response = await fetch("/api/qr", {
+        showNotification("payment_checking", "info");
+        
+        const response = await fetch("/api/deposit", {
             method: "POST",
             headers: { 
                 "Content-Type": "application/json",
                 "X-Telegram-WebApp-Init-Data": getInitData()
             },
-            body: JSON.stringify({ amount }),
+            body: JSON.stringify({ amount: parseFloat(amount) }),
         });
 
         if (!response.ok) {
-            throw new Error("Ошибка при получении QR");
+            throw new Error("Ошибка при создании депозита");
         }
 
         const data = await response.json();
 
-        if (data.qr_code) {
+        if (data.success) {
+            currentDepositId = data.deposit_id;
+            
             const qrSection = document.getElementById("qr-section");
             const qrImg = document.getElementById("qr-img");
             const qrAddress = document.getElementById("qr-address");
+            const qrComment = document.getElementById("qr-comment");
+            const paymentUrl = document.getElementById("payment-url");
 
             qrImg.src = data.qr_code;
             qrAddress.textContent = data.address || "—";
+            qrComment.textContent = data.comment || "—";
+            paymentUrl.href = data.payment_url;
+            paymentUrl.textContent = data.payment_url;
+            
             qrSection.style.display = "block";
-
             qrSection.scrollIntoView({ behavior: 'smooth' });
             
-            console.log("✅ QR-код успешно загружен!");
-            showNotification("qr_ready", "success");
+            showNotification("deposit_created", "success");
+            
+            // Запускаем проверку платежа
+            startPaymentChecking(currentDepositId);
         } else {
-            showNotification("Ошибка: сервер не вернул QR-код.", "error");
+            showNotification("Ошибка создания депозита", "error");
         }
     } catch (err) {
         console.error("Ошибка запроса:", err);
-        showNotification("Не удалось получить QR-код.", "error");
+        showNotification("connection_error", "error");
     }
 };
+
+// === ЗАПУСК ПРОВЕРКИ ПЛАТЕЖА ===
+function startPaymentChecking(depositId) {
+    // Останавливаем предыдущую проверку
+    stopPaymentChecking();
+    
+    paymentCheckInterval = setInterval(async () => {
+        try {
+            const response = await fetch("/api/check-payment", {
+                method: "POST",
+                headers: { 
+                    "Content-Type": "application/json",
+                    "X-Telegram-WebApp-Init-Data": getInitData()
+                },
+                body: JSON.stringify({ deposit_id: depositId }),
+            });
+
+            if (response.ok) {
+                const result = await response.json();
+                
+                if (result.status === 'completed') {
+                    stopPaymentChecking();
+                    showNotification(`payment_confirmed ${result.bonus.toFixed(4)} TON`, 'success');
+                    loadUserData();
+                    loadDashboardData();
+                    
+                    // Скрываем секцию QR через 3 секунды
+                    setTimeout(() => {
+                        const qrSection = document.getElementById("qr-section");
+                        if (qrSection) qrSection.style.display = 'none';
+                    }, 3000);
+                    
+                } else if (result.status === 'expired') {
+                    stopPaymentChecking();
+                    showNotification('payment_expired', 'error');
+                } else if (result.status === 'pending') {
+                    // Продолжаем проверку
+                    console.log('Платеж еще не подтвержден...');
+                }
+            }
+        } catch (error) {
+            console.error('Ошибка проверки платежа:', error);
+        }
+    }, 5000); // Проверяем каждые 5 секунд
+    
+    // Останавливаем проверку через 25 минут
+    setTimeout(() => {
+        stopPaymentChecking();
+    }, 25 * 60 * 1000);
+}
+
+// === ОСТАНОВКА ПРОВЕРКИ ПЛАТЕЖА ===
+function stopPaymentChecking() {
+    if (paymentCheckInterval) {
+        clearInterval(paymentCheckInterval);
+        paymentCheckInterval = null;
+    }
+}
 
 // === КОПИРОВАНИЕ АДРЕСА ===
 window.copyAddress = function() {
     const address = document.getElementById('qr-address');
     if (address && address.textContent && address.textContent !== '—') {
         navigator.clipboard.writeText(address.textContent).then(function() {
+            showNotification('address_copied', 'success');
+        }).catch(function() {
+            showNotification('copy_error', 'error');
+        });
+    } else {
+        showNotification('no_address', 'error');
+    }
+};
+
+// === КОПИРОВАНИЕ ССЫЛКИ ОПЛАТЫ ===
+window.copyPaymentUrl = function() {
+    const paymentUrl = document.getElementById('payment-url');
+    if (paymentUrl && paymentUrl.href) {
+        navigator.clipboard.writeText(paymentUrl.href).then(function() {
             showNotification('address_copied', 'success');
         }).catch(function() {
             showNotification('copy_error', 'error');
@@ -583,38 +678,6 @@ window.withdraw = async function() {
     }
 };
 
-// === ПРОВЕРКА ПЛАТЕЖА ===
-window.checkPayment = async function() {
-    try {
-        const res = await fetch(`${CONFIG.API_BASE}/api/check`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-Telegram-WebApp-Init-Data': getInitData()
-            }
-        });
-        
-        if (res.ok) {
-            const result = await res.json();
-            
-            if (result.status === 'success') {
-                const message = currentLanguage === 'ru' 
-                    ? `✅ Платеж подтвержден! Бонус: ${result.bonus.toFixed(4)} TON`
-                    : `✅ Payment confirmed! Bonus: ${result.bonus.toFixed(4)} TON`;
-                showNotification(message, 'success');
-                loadUserData();
-                loadDashboardData();
-            } else if (result.status === 'pending') {
-                showNotification('payment_pending', 'info');
-            } else {
-                showNotification('no_pending_payments', 'info');
-            }
-        }
-    } catch (e) {
-        showNotification('connection_error', 'error');
-    }
-};
-
 // === КОПИРОВАНИЕ РЕФЕРАЛЬНОЙ ССЫЛКИ ===
 window.copyLink = function() {
     const linkElement = document.getElementById('ref-link');
@@ -642,10 +705,15 @@ document.addEventListener('DOMContentLoaded', function() {
     const savedLanguage = localStorage.getItem('preferredLanguage') || 'ru';
     changeLanguage(savedLanguage);
     
-    // Инициализация кнопки копирования адреса
+    // Инициализация кнопок
     const copyAddressBtn = document.getElementById('copyAddressBtn');
     if (copyAddressBtn) {
         copyAddressBtn.addEventListener('click', copyAddress);
+    }
+    
+    const copyPaymentUrlBtn = document.getElementById('copyPaymentUrlBtn');
+    if (copyPaymentUrlBtn) {
+        copyPaymentUrlBtn.addEventListener('click', copyPaymentUrl);
     }
     
     // Показываем главный экран и загружаем данные
@@ -658,9 +726,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Глобальные функции
 window.showSection = showSection;
-window.checkPayment = checkPayment;
 window.copyAddress = copyAddress;
+window.copyPaymentUrl = copyPaymentUrl;
 window.withdraw = withdraw;
 window.calculate = calculate;
 window.copyLink = copyLink;
 window.changeLanguage = changeLanguage;
+window.createDeposit = createDeposit;
