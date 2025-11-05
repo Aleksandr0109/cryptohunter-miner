@@ -228,7 +228,7 @@ async def api_withdraw(data: dict, request: Request):
     amount = Decimal(str(data.get("amount", 0)))
     if not address.startswith(("kQ", "UQ", "EQ")):
         raise HTTPException(400, "Invalid address")
-    asyncync with AsyncSessionLocal() as db:
+    async with AsyncSessionLocal() as db:
         user = await db.get(User, user_id)
         if not user:
             raise HTTPException(404, "User not found")
