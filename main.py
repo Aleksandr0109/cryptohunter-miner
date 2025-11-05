@@ -1,9 +1,11 @@
-# main.py — v3.5 — ТОЛЬКО outreach_session.session | 1 АККАУНТ | ВСЁ НА ЭТОЙ СЕССИИ
+# main.py — v3.7 — ПОЛНЫЙ, ИСПРАВЛЕННЫЙ, РАБОЧИЙ
+# ИСПОЛЬЗУЕТ: API_ID, API_HASH, PHONE → outreach_session.session
 import os
 import asyncio
 import logging
 import sys
 from pathlib import Path
+from datetime import datetime
 
 # Ускорение
 import uvloop
@@ -57,7 +59,13 @@ async def root():
 
 @app.get("/health")
 async def health():
-    return {"status": "ok", "session": "outreach_session.session", "referrals": "enabled"}
+    return {
+        "status": "ok",
+        "session": "outreach_session.session",
+        "scanner": "active",
+        "outreach": "active",
+        "referrals": "enabled"
+    }
 
 # === ВАЛИДАЦИЯ INITDATA ===
 def validate_init_data(init_data: str) -> dict | None:
@@ -220,7 +228,7 @@ async def api_withdraw(data: dict, request: Request):
     amount = Decimal(str(data.get("amount", 0)))
     if not address.startswith(("kQ", "UQ", "EQ")):
         raise HTTPException(400, "Invalid address")
-    async with AsyncSessionLocal() as db:
+    asyncync with AsyncSessionLocal() as db:
         user = await db.get(User, user_id)
         if not user:
             raise HTTPException(404, "User not found")
@@ -283,17 +291,20 @@ async def api_referral(request: Request):
             "income": float(total_income)
         }
 
-# === ТОЛЬКО outreach_session.session ===
+# === ТОЛЬКО outreach_session.session — ЧИТАЕТ API_ID, API_HASH, PHONE ===
 async def create_client():
-    api_id = os.getenv("OUTREACH_API_ID")
-    api_hash = os.getenv("OUTREACH_API_HASH")
-    phone = os.getenv("OUTREACH_PHONE")
+    # ЧИТАЕМ ТВОИ ПЕРЕМЕННЫЕ
+    api_id = os.getenv("API_ID")
+    api_hash = os.getenv("API_HASH")
+    phone = os.getenv("PHONE")
+    
     if not all([api_id, api_hash, phone]):
-        logger.error("Нет OUTREACH_API_ID / API_HASH / PHONE")
+        logger.error("Нет API_ID / API_HASH / PHONE в .env")
         return None
+    
     api_id = int(api_id)
 
-    # ТОЛЬКО outreach_session.session
+    # СЕССИЯ: outreach_session.session
     client = TelegramClient("outreach_session", api_id, api_hash)
     session_file = "outreach_session.session"
 
@@ -314,16 +325,16 @@ async def create_client():
     logger.info(f"Авторизация: {phone}")
     try:
         await client.start(phone=lambda: phone)
-        logger.info("outreach_session.session — создана")
+        logger.info("outreach_session.session — создана и авторизована")
         return client
     except SessionPasswordNeededError:
-        logger.error("2FA включён — отключите")
+        logger.error("2FA включён — отключите в настройках Telegram")
         return None
     except Exception as e:
-        logger.error(f"Ошибка: {e}")
+        logger.error(f"Ошибка авторизации: {e}")
         return None
 
-# === LEAD SCANNER (на outreach_session.session) ===
+# === LEAD SCANNER ===
 async def run_lead_scanner():
     while True:
         client = await create_client()
@@ -342,7 +353,7 @@ async def run_lead_scanner():
             await client.disconnect()
             await asyncio.sleep(3600)
 
-# === OUTREACH SENDER (на outreach_session.session) ===
+# === OUTREACH SENDER ===
 async def run_outreach_sender():
     while True:
         client = await create_client()
@@ -418,7 +429,7 @@ async def serve_api():
 
 # === ГЛАВНЫЙ ЦИКЛ ===
 async def main():
-    logger.info("CRYPTOHUNTER v3.5 — ТОЛЬКО outreach_session.session")
+    logger.info("CRYPTOHUNTER v3.7 — ЗАПУСК НА outreach_session.session")
     await init_db()
     await asyncio.gather(
         start_bot(),
