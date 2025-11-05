@@ -51,80 +51,52 @@ class TonkeeperAPI:
         return f"ref_{user_id}_{random_part}"
 
     async def create_payment_request(self, user_id: int, amount: float):
-    """Создание запроса на оплату с уникальным комментарием - ОБНОВЛЕННАЯ"""
-    try:
-        base_address = await self.get_address()
-        comment = self._generate_payment_comment(user_id)
-        amount_nano = int(amount * 1e9)
-        
-        # Сохраняем в базу
-        async with AsyncSessionLocal() as db:
-            deposit = PendingDeposit(
-                user_id=user_id,
-                amount=amount,
-                comment=comment,
-                address=base_address,
-                expires_at=datetime.utcnow() + timedelta(hours=24)
-            )
-            db.add(deposit)
-            await db.commit()
-            await db.refresh(deposit)
+        """Создание запроса на оплату с уникальным комментарием"""
+        try:
+            base_address = await self.get_address()
+            comment = self._generate_payment_comment(user_id)
+            amount_nano = int(amount * 1e9)
+            
+            # Сохраняем в базу
+            async with AsyncSessionLocal() as db:
+                deposit = PendingDeposit(
+                    user_id=user_id,
+                    amount=amount,
+                    comment=comment,
+                    address=base_address,
+                    expires_at=datetime.utcnow() + timedelta(hours=24)
+                )
+                db.add(deposit)
+                await db.commit()
+                await db.refresh(deposit)
 
-        # Формируем URL для оплаты (корректный для TON)
-        payment_url = f"ton://transfer/{base_address}?amount={amount_nano}&text={comment}"
-        
-        # Генерируем QR-код
-        qr_code = self.generate_qr_code(payment_url)
-        
-        return {
-            "success": True,
-            "url": payment_url,
-            "address": base_address,
-            "comment": comment,
-            "qr_code": qr_code,
-            "deposit_id": deposit.id,
-            "amount": amount,
-            "amount_nano": amount_nano
-        }
-    except Exception as e:
-        logging.error(f"❌ Ошибка создания платежа: {e}")
-        return {
-            "success": False,
-            "error": str(e)
-        }
+            # Формируем URL для оплаты
+            payment_url = f"ton://transfer/{base_address}?amount={amount_nano}&text={comment}"
+            
+            return {
+                "url": payment_url,
+                "address": base_address,
+                "comment": comment,
+                "qr_code": self.generate_qr_code(payment_url),
+                "deposit_id": deposit.id
+            }
+        except Exception as e:
+            logging.error(f"❌ Ошибка создания платежа: {e}")
+            raise
 
     def generate_qr_code(self, payment_url: str):
-    """Генерация QR-кода - ИСПРАВЛЕННАЯ ВЕРСИЯ"""
-    try:
-        import qrcode
-        from io import BytesIO
-        import base64
-        
-        # Создаем QR-код с настройками для Telegram WebApp
-        qr = qrcode.QRCode(
-            version=1,
-            error_correction=qrcode.constants.ERROR_CORRECT_L,
-            box_size=6,  # Уменьшаем для лучшего отображения в WebApp
-            border=2,
-        )
-        qr.add_data(payment_url)
-        qr.make(fit=True)
-        
-        # Создаем изображение с оптимальными настройками
-        img = qr.make_image(fill_color="black", back_color="white")
-        
-        # Конвертируем в base64
-        buffered = BytesIO()
-        img.save(buffered, format="PNG", optimize=True)
-        img_str = base64.b64encode(buffered.getvalue()).decode()
-        
-        # Формируем data URL для WebApp
-        return f"data:image/png;base64,{img_str}"
-        
-    except Exception as e:
-        logging.error(f"❌ Ошибка генерации QR: {e}")
-        # Возвращаем пустую картинку в случае ошибки
-        return "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII="
+        """Генерация QR-кода"""
+        try:
+            qr = qrcode.QRCode(version=1, box_size=10, border=4)
+            qr.add_data(payment_url)
+            qr.make(fit=True)
+            img = qr.make_image(fill_color="black", back_color="white")
+            buffered = BytesIO()
+            img.save(buffered, format="PNG")
+            return base64.b64encode(buffered.getvalue()).decode()
+        except Exception as e:
+            logging.error(f"❌ Ошибка генерации QR: {e}")
+            return None
 
     async def check_payment_status(self, user_id: int, deposit_id: int = None):
         """Проверка статуса платежа"""
