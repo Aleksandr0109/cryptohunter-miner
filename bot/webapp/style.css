@@ -470,7 +470,7 @@ h1 {
     margin-bottom: 0;
 }
 
-/* ===== QR CODE SECTION ===== */
+/* ===== QR CODE SECTION — ИСПРАВЛЕНО! ===== */
 #qr-section {
     display: none;
     text-align: center;
@@ -490,31 +490,65 @@ h1 {
     background: white;
     margin: 0 auto;
     image-rendering: pixelated;
+    display: block;
 }
-#qr-address {
+#qr-address,
+#payment-url {
+    font-family: 'Courier New', monospace;
     font-size: 0.9em;
+    line-height: 1.4;
     word-break: break-all;
-    color: #ffffff;
-    margin: 10px 0;
+    white-space: normal;
+    max-width: 100%;
     padding: 10px;
     background: rgba(0, 0, 0, 0.6);
     border-radius: 8px;
-    font-family: 'Courier New', monospace;
+    color: #e0e0ff;
+    margin: 10px 0;
+    display: block;
+    text-decoration: none;
 }
-#copyAddressBtn {
-    margin-top: 8px;
+#payment-url {
+    color: #4da6ff;
+    text-decoration: underline;
+}
+#payment-url:hover {
+    color: #00ffcc;
+}
+#qr-comment {
+    font-size: 0.9em;
+    color: #aaa;
+    word-break: break-all;
+    margin: 8px 0;
+}
+#copyAddressBtn,
+#copyPaymentUrlBtn,
+#checkPaymentBtn {
+    margin: 6px 4px;
     padding: 8px 16px;
+    font-size: 0.9em;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+#copyAddressBtn,
+#copyPaymentUrlBtn {
     background: linear-gradient(135deg, #2196F3, #1976D2);
     color: white;
     border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    font-weight: 600;
-    transition: all 0.3s ease;
 }
-#copyAddressBtn:hover {
+#checkPaymentBtn {
+    background: linear-gradient(135deg, #4CAF50, #45a049) !important;
+    color: white;
+    font-weight: bold;
+    display: none;
+}
+#copyAddressBtn:hover,
+#copyPaymentUrlBtn:hover,
+#checkPaymentBtn:hover {
     transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(33, 150, 243, 0.4);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
 }
 
 /* ===== SECTIONS ===== */
@@ -592,6 +626,7 @@ h1 {
     .balance-card h2 { font-size: 32px; }
     .btn { padding: 12px 15px; font-size: 14px; }
     .investor-item, .withdraw-request-item { padding: 10px; }
+    #qr-img { width: 180px; height: 180px; }
 }
 
 /* ===== SCROLLBAR STYLING ===== */
