@@ -268,7 +268,7 @@ async def api_calc(data: dict):
 # === API: Создание депозита ===
 @app.post("/api/deposit")
 async def api_deposit(data: dict, request: Request):
-    """Создание депозита с уникальным комментарием - ОБНОВЛЕННЫЙ"""
+    """Создание депозита с уникальным комментарием"""
     try:
         user_info = validate_init_data(request.headers.get("X-Telegram-WebApp-Init-Data"))
         user_id = user_info["user_id"] if user_info else 8089114323
@@ -279,9 +279,6 @@ async def api_deposit(data: dict, request: Request):
 
         # Создаем платежный запрос
         payment_data = await tonkeeper.create_payment_request(user_id, amount)
-        
-        if not payment_data.get("success", True):
-            raise HTTPException(500, f"Ошибка создания платежа: {payment_data.get('error')}")
         
         return JSONResponse({
             "success": True,
