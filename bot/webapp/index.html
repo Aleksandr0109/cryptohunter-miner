@@ -103,7 +103,7 @@
                     </div>
                     <div class="stat-row">
                         <span data-i18n="month">Месяц:</span>
-                        <b id="dash-monthly-inv">0.00 TON</b> <!-- ИСПРАВЛЕНО -->
+                        <b id="dash-monthly-inv">0.00 TON</b>
                     </div>
                 </div>
                 <div class="stats-section">
@@ -202,20 +202,32 @@
                     Сгенерировать QR для оплаты
                 </button>
               
+                <!-- QR-СЕКЦИЯ -->
                 <div id="qr-section" style="display:none; text-align:center; margin-top:20px;">
                   <p data-i18n="scan_qr">Отсканируйте QR-код для оплаты:</p>
                   <img id="qr-img" alt="QR Code" width="220"
                        style="border:1px solid #ccc; border-radius:12px; padding:6px;">
+                  
                   <p style="margin-top:10px;" data-i18n="ton_address">Адрес TON:</p>
                   <p id="qr-address" style="font-size:0.9em; word-break:break-all; color:#555;">—</p>
 
                   <!-- КОММЕНТАРИЙ -->
                   <p style="margin-top:8px; font-size:0.9em; color:#666;">
-                      Комментарий: <span id="qr-comment" style="color:#555;">—</span>
+                      <span data-i18n="comment">Комментарий:</span> 
+                      <span id="qr-comment" style="color:#555;">—</span>
                   </p>
 
-                  <button id="copyAddressBtn" style="margin-top:8px; padding:5px 10px;"
+                  <!-- ССЫЛКА НА ОПЛАТУ -->
+                  <p style="margin-top:10px;">
+                      <a id="payment-url" href="#" target="_blank" style="color:#2196F3; word-break:break-all;">
+                          Открыть в кошельке
+                      </a>
+                  </p>
+
+                  <button id="copyAddressBtn" style="margin:8px 4px; padding:5px 10px;"
                           data-i18n="copy_address">Скопировать адрес</button>
+                  <button id="copyPaymentUrlBtn" style="margin:8px 4px; padding:5px 10px;"
+                          onclick="copyPaymentUrl()">Скопировать ссылку</button>
 
                   <!-- КНОПКА ПРОВЕРКИ -->
                   <button id="checkPaymentBtn" 
@@ -225,6 +237,7 @@
                   </button>
                 </div>
               
+                <!-- КАЛЬКУЛЯТОР -->
                 <div class="calculator">
                     <h3 data-i18n="profit_calculator">Калькулятор доходности</h3>
                     <div class="input-group">
