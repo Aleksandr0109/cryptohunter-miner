@@ -1,4 +1,4 @@
-// === script.js — РАБОЧАЯ СИСТЕМА ОПЛАТЫ + МУЛЬТИЯЗЫЧНОСТЬ + АВТО-НАЧИСЛЕНИЯ ===
+// === script.js — РАБОЧАЯ СИСТЕМА ОПЛАТЫ + МУЛЬТИЯЗЫЧНОСТЬ + АВТО-НАЧИСЛЕНИЯ + УЛУЧШЕНИЯ ===
 console.log("CryptoHunter Miner WebApp загружен");
 const tg = window.Telegram?.WebApp;
 
@@ -27,7 +27,7 @@ const translations = {
         "detailed_stats": "Детальная статистика",
         "referral_program": "Реферальная программа",
         "back": "Назад",
-       
+      
         // Детальная статистика
         "investments": "ИНВЕСТИЦИИ",
         "amount": "Сумма:",
@@ -42,7 +42,7 @@ const translations = {
         "per_hour": "В час:",
         "not_ready": "Не готово",
         "min_withdraw": "Минимум: 1 TON (1.00 TON осталось)",
-       
+      
         // Новые элементы
         "community": "СООБЩЕСТВО",
         "total_subscribers": "Всего подписчиков:",
@@ -52,14 +52,14 @@ const translations = {
         "wallet": "Кошелек",
         "amount_ton": "Сумма TON",
         "status": "Статус",
-       
+      
         // Реферальная программа
         "direct_referrals": "прямых рефералов",
         "level_2": "2-й уровень",
         "earned_ton": "Заработано TON",
         "your_referral_link": "Ваша реферальная ссылка:",
         "copy_link": "Скопировать ссылку",
-       
+      
         // Инвестирование
         "investing": "Инвестирование",
         "investment_amount": "Сумма инвестиции (TON):",
@@ -72,18 +72,18 @@ const translations = {
         "calculate_profit": "Рассчитать доходность",
         "investment_bonus": "Бонус за инвестицию:",
         "year": "Год:",
-       
+      
         // Вывод
         "withdraw_funds": "Вывод средств",
         "available_for_withdraw": "Доступно для вывода:",
         "ton_wallet_address": "Адрес TON кошелька:",
         "withdraw_amount": "Сумма вывода (TON):",
-       
+      
         // Плейсхолдеры
         "min_ton": "Минимум 1 TON",
         "enter_amount": "Введите сумму",
         "wallet_placeholder": "Начинается с kQ, UQ или EQ",
-       
+      
         // Уведомления
         "server_sleeping": "Сервер спит...",
         "calc_local": "Расчет выполнен локально",
@@ -108,7 +108,9 @@ const translations = {
         "payment_expired": "Время оплаты истекло",
         "payment_error": "Ошибка проверки платежа",
         "refresh": "Обновить",
-        "accrued": "Начислено +"
+        "accrued": "Начислено +",
+        "check_payment": "Проверить оплату",
+        "payment_checking_auto": "Автопроверка каждые 5 сек..."
     },
     en: {
         "invest": "Invest",
@@ -187,7 +189,9 @@ const translations = {
         "payment_expired": "Payment time expired",
         "payment_error": "Payment check error",
         "refresh": "Refresh",
-        "accrued": "Accrued +"
+        "accrued": "Accrued +",
+        "check_payment": "Check payment",
+        "payment_checking_auto": "Auto-check every 5 sec..."
     }
 };
 
@@ -239,7 +243,6 @@ function showSection(id) {
         target.style.display = 'block';
         target.classList.add('active');
     }
-
     if (id === 'stats') loadUserData();
     if (id === 'dashboard') loadDashboardData();
     if (id === 'referral') loadReferralData();
@@ -267,7 +270,6 @@ function animateValue(id, end, duration = 600) {
     const start = parseFloat(element.textContent) || 0;
     const range = end - start;
     const startTime = performance.now();
-
     function step(currentTime) {
         const elapsed = currentTime - startTime;
         const progress = Math.min(elapsed / duration, 1);
@@ -291,12 +293,10 @@ async function loadUserData() {
         if (res.ok) {
             const userData = await res.json();
             currentUserData = userData;
-
             animateValue('balance', parseFloat(userData.balance));
             document.getElementById('invested').textContent = Number(userData.invested).toFixed(2);
             document.getElementById('earned').textContent = Number(userData.earned).toFixed(4);
             document.getElementById('speed').textContent = userData.speed;
-
             updateWithdrawInfo();
             startHourlyAccrual(); // ВКЛЮЧЕНО
         }
@@ -308,22 +308,16 @@ async function loadUserData() {
 // === АВТО-НАЧИСЛЕНИЯ КАЖДЫЙ ЧАС ===
 function startHourlyAccrual() {
     if (hourlyAccrualInterval) clearInterval(hourlyAccrualInterval);
-
     hourlyAccrualInterval = setInterval(() => {
         if (!currentUserData) return;
-
         const invested = parseFloat(currentUserData.invested) || 0;
         const hourlyRate = (invested * CONFIG.DAILY_RATE) / 24 / 100;
         const newBalance = (parseFloat(currentUserData.balance) || 0) + hourlyRate;
-
         currentUserData.balance = newBalance.toFixed(4);
         currentUserData.earned = (parseFloat(currentUserData.earned) || 0) + hourlyRate;
-
         animateValue('balance', newBalance);
         document.getElementById('earned').textContent = currentUserData.earned.toFixed(4);
-
         showNotification('accrued', 'success', `+${hourlyRate.toFixed(4)} TON`);
-
         if (document.getElementById('dashboard').classList.contains('active')) {
             loadDashboardData();
         }
@@ -345,19 +339,17 @@ async function loadDashboardData() {
             document.getElementById('dash-invested').textContent = `${dashData.invested.toFixed(2)} TON`;
             document.getElementById('dash-daily-inv').textContent = dashData.daily_investment.toFixed(3) + ' TON';
             document.getElementById('dash-weekly-inv').textContent = (dashData.daily_investment * 7).toFixed(3) + ' TON';
-            document.getElementById('dash-monthly-inv').textContent = (dashData.daily_investment * 30).toFixed(2) + ' TON';
+            document.getElementById('dash-monthly-iv').textContent = (dashData.daily_investment * 30).toFixed(2) + ' TON';
             document.getElementById('dash-speed').textContent = `${dashData.speed.toFixed(0)}%`;
             document.getElementById('dash-daily-free').textContent = dashData.daily_free.toFixed(4) + ' TON';
             document.getElementById('dash-days-per-ton').textContent = dashData.days_per_ton.toFixed(1) + ' ' + (currentLanguage === 'ru' ? 'дней' : 'days');
             document.getElementById('dash-accumulated').textContent = dashData.balance.toFixed(2) + ' TON';
             document.getElementById('dash-total-daily').textContent = dashData.total_daily.toFixed(4) + ' TON';
             document.getElementById('dash-hourly').textContent = dashData.hourly.toFixed(4) + ' TON';
-
             const withdrawStatus = dashData.can_withdraw ?
                 (currentLanguage === 'ru' ? "Готово" : "Ready") :
                 (currentLanguage === 'ru' ? "Не готово" : "Not ready");
             document.getElementById('dash-withdraw-status').textContent = withdrawStatus;
-
             const remaining = Math.max(0, CONFIG.MIN_WITHDRAW - dashData.balance);
             const minWithdrawText = currentLanguage === 'ru'
                 ? `Минимум: ${CONFIG.MIN_WITHDRAW} TON (${remaining.toFixed(2)} TON осталось)`
@@ -438,7 +430,7 @@ function updateCalculatorResults(amount, data) {
     const calcResult = document.getElementById('calc-result');
     if (calcResult) {
         calcResult.innerHTML = `
-            <div class="calc-result-item"><span>${translations[currentLanguage]['day']}</span><b>${data.daily.toFixed(4)} TON</b></div>
+            <div class="calc-result-item"><span>${translations[currentLanguage]['day']}</span>< fortnight>${data.daily.toFixed(4)} TON</b></div>
             <div class="calc-result-item"><span>${translations[currentLanguage]['week']}</span><b>${(data.daily * 7).toFixed(4)} TON</b></div>
             <div class="calc-result-item"><span>${translations[currentLanguage]['month']}</span><b>${data.monthly.toFixed(4)} TON</b></div>
             <div class="calc-result-item"><span>${translations[currentLanguage]['year']}</span><b>${data.yearly.toFixed(4)} TON</b></div>
@@ -478,14 +470,26 @@ window.createDeposit = async function() {
             const qrAddress = document.getElementById("qr-address");
             const qrComment = document.getElementById("qr-comment");
             const paymentUrl = document.getElementById("payment-url");
+            const checkBtn = document.getElementById("checkPaymentBtn");
+
             qrImg.src = data.qr_code;
             qrAddress.textContent = data.address || "—";
             qrComment.textContent = data.comment || "—";
             paymentUrl.href = data.payment_url;
             paymentUrl.textContent = data.payment_url;
+
             qrSection.style.display = "block";
             qrSection.scrollIntoView({ behavior: 'smooth' });
+
+            // Кнопка проверки
+            if (checkBtn) {
+                checkBtn.style.display = 'block';
+                checkBtn.textContent = translations[currentLanguage].check_payment;
+                checkBtn.onclick = () => checkPaymentManually();
+            }
+
             showNotification("deposit_created", "success");
+            showNotification("payment_checking_auto", "info");
             startPaymentChecking(currentDepositId);
         } else {
             showNotification("Ошибка создания депозита", "error");
@@ -495,6 +499,36 @@ window.createDeposit = async function() {
         showNotification("connection_error", "error");
     }
 };
+
+// === РУЧНАЯ ПРОВЕРКА ПЛАТЕЖА ===
+function checkPaymentManually() {
+    if (!currentDepositId) return;
+    showNotification("payment_checking", "info");
+    fetch("/api/check-payment", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "X-Telegram-WebApp-Init-Data": getInitData()
+        },
+        body: JSON.stringify({ deposit_id: currentDepositId }),
+    })
+    .then(r => r.json())
+    .then(result => {
+        if (result.status === 'completed') {
+            stopPaymentChecking();
+            showNotification(`payment_confirmed ${result.bonus?.toFixed(4) || 0} TON`, 'success');
+            loadUserData();
+            loadDashboardData();
+            setTimeout(() => {
+                document.getElementById("qr-section").style.display = 'none';
+                document.getElementById("checkPaymentBtn").style.display = 'none';
+            }, 3000);
+        } else {
+            showNotification('payment_pending', 'info');
+        }
+    })
+    .catch(() => showNotification('payment_error', 'error'));
+}
 
 // === ЗАПУСК ПРОВЕРКИ ПЛАТЕЖА ===
 function startPaymentChecking(depositId) {
@@ -513,12 +547,14 @@ function startPaymentChecking(depositId) {
                 const result = await response.json();
                 if (result.status === 'completed') {
                     stopPaymentChecking();
-                    showNotification(`payment_confirmed ${result.bonus.toFixed(4)} TON`, 'success');
+                    showNotification(`payment_confirmed ${result.bonus?.toFixed(4) || 0} TON`, 'success');
                     loadUserData();
                     loadDashboardData();
                     setTimeout(() => {
                         const qrSection = document.getElementById("qr-section");
                         if (qrSection) qrSection.style.display = 'none';
+                        const btn = document.getElementById("checkPaymentBtn");
+                        if (btn) btn.style.display = 'none';
                     }, 3000);
                 } else if (result.status === 'expired') {
                     stopPaymentChecking();
@@ -673,18 +709,13 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('DOM loaded, initializing app...');
     const savedLanguage = localStorage.getItem('preferredLanguage') || 'ru';
     changeLanguage(savedLanguage);
-
     const copyAddressBtn = document.getElementById('copyAddressBtn');
     if (copyAddressBtn) copyAddressBtn.addEventListener('click', copyAddress);
-
     const copyPaymentUrlBtn = document.getElementById('copyPaymentUrlBtn');
     if (copyPaymentUrlBtn) copyPaymentUrlBtn.addEventListener('click', copyPaymentUrl);
-
     showSection('stats');
     loadUserData();
-
     setInterval(loadUserData, 30000);
-
     const refreshBtn = document.getElementById('refresh-btn');
     if (refreshBtn) refreshBtn.addEventListener('click', refresh);
 });
