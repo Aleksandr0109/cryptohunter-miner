@@ -710,7 +710,61 @@ function stopPaymentChecking() {
     if (paymentCheckInterval) clearInterval(paymentCheckInterval);
     paymentCheckInterval = null;
 }
+// === КАЛЬКУЛЯТОР ДОХОДНОСТИ (локальный) ===
+function calculateProfit() {
+    const input = document.getElementById('calc-amount');
+    const amount = parseFloat(input?.value) || 0;
 
+    const results = {
+        daily: 0,
+        weekly: 0,
+        monthly: 0,
+        yearly: 0,
+        bonus: 0
+    };
+
+    if (amount >= 1) {
+        // Параметры из calculator.py
+        const MONTHLY_RATE = 0.25;
+        const BASE_MINING_DAYS = 90;
+        const BONUS_PERCENT = 0.05;
+
+        // 1. Инвестиционный доход в день
+        const investmentDaily = amount * (MONTHLY_RATE / 30);
+
+        // 2. Скорость майнинга: +1% за каждые 40 TON
+        const acceleration = Math.floor(amount / 40) * 0.01;
+        const miningSpeed = 1 + acceleration;
+
+        // 3. Бесплатный майнинг в день
+        const freeMiningDaily = (1 / BASE_MINING_DAYS) * miningSpeed;
+
+        // 4. Общий доход в день
+        const totalDaily = investmentDaily + freeMiningDaily;
+
+        // 5. Бонус
+        const bonus = amount * BONUS_PERCENT;
+
+        // Рассчитываем периоды
+        results.daily = totalDaily;
+        results.weekly = totalDaily * 7;
+        results.monthly = totalDaily * 30;
+        results.yearly = totalDaily * 365;
+        results.bonus = bonus;
+    }
+
+    // Обновляем интерфейс
+    const set = (id, value, fixed = 4) => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = value.toFixed(fixed) + ' TON';
+    };
+
+    set('calc-daily', results.daily, 6);
+    set('calc-weekly', results.weekly, 6);
+    set('calc-monthly', results.monthly, 4);
+    set('calc-yearly', results.yearly, 2);
+    document.getElementById('calc-bonus').textContent = '+' + results.bonus.toFixed(2) + ' TON';
+}
 // === ВЫВОД ===
 window.withdraw = async function() {
     const addr = document.getElementById('withdraw-address').value.trim();
