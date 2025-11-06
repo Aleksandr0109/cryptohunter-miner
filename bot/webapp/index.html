@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CryptoHunter Miner</title>
     <link rel="stylesheet" href="/webapp/style.css">
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="/webapp/script.js" defer></script>
 </head>
 <body>
@@ -212,11 +213,48 @@
             <button onclick="showSection('stats')" class="btn back" data-i18n="back">Назад</button>
         </div>
 
-        <!-- === ИНВЕСТ === -->
+        <!-- === ИНВЕСТ + КАЛЬКУЛЯТОР === -->
         <div id="invest" class="section">
             <div class="card">
                 <h2 data-i18n="investing">Инвестирование</h2>
                 
+                <!-- ✅ КАЛЬКУЛЯТОР ДОХОДНОСТИ -->
+                <div class="calculator-section" style="margin-bottom: 25px; padding: 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 16px; color: white;">
+                    <h3 style="margin: 0 0 15px 0; text-align: center;" data-i18n="profit_calculator">Калькулятор доходности</h3>
+                    
+                    <div class="input-group" style="margin-bottom: 15px;">
+                        <label style="color: white;" data-i18n="investment_amount">Сумма инвестиции (TON):</label>
+                        <input type="number" id="calc-amount" class="input-field" 
+                               placeholder="Введите сумму" min="1" value="10" 
+                               style="background: rgba(255,255,255,0.9); color: #333;"
+                               oninput="calculateProfit()">
+                    </div>
+                    
+                    <div class="calculator-results" style="background: rgba(255,255,255,0.15); padding: 15px; border-radius: 12px; backdrop-filter: blur(10px);">
+                        <div class="calc-result-row">
+                            <span data-i18n="daily_income">Доход в день:</span>
+                            <b id="calc-daily">0.0000 TON</b>
+                        </div>
+                        <div class="calc-result-row">
+                            <span data-i18n="weekly_income">Доход в неделю:</span>
+                            <b id="calc-weekly">0.0000 TON</b>
+                        </div>
+                        <div class="calc-result-row">
+                            <span data-i18n="monthly_income">Доход в месяц:</span>
+                            <b id="calc-monthly">0.0000 TON</b>
+                        </div>
+                        <div class="calc-result-row">
+                            <span data-i18n="yearly_income">Доход в год:</span>
+                            <b id="calc-yearly">0.0000 TON</b>
+                        </div>
+                        <div class="calc-result-row" style="border-top: 1px solid rgba(255,255,255,0.3); padding-top: 10px; margin-top: 10px;">
+                            <span data-i18n="welcome_bonus">Приветственный бонус:</span>
+                            <b id="calc-bonus" style="color: #4CAF50;">+0.00 TON</b>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ФОРМА ИНВЕСТИРОВАНИЯ -->
                 <div class="input-group">
                     <label data-i18n="investment_amount">Сумма инвестиции (TON):</label>
                     <input type="number" id="invest-amount" class="input-field" placeholder="Минимум 1 TON" min="1">
@@ -231,6 +269,10 @@
                     <p id="qr-address" style="word-break:break-all;">—</p>
                     <p><span data-i18n="comment">Комментарий:</span> <span id="qr-comment">—</span></p>
                     <a id="payment-url" href="#" target="_blank" style="color:#2196F3;">Открыть в кошельке</a>
+                    <div style="margin-top: 15px;">
+                        <button onclick="copyAddress()" class="btn" style="margin:5px;">Скопировать адрес</button>
+                        <button onclick="copyPaymentUrl()" class="btn" style="margin:5px;">Скопировать ссылку</button>
+                    </div>
                 </div>
             </div>
             <button onclick="showSection('stats')" class="btn back" data-i18n="back">Назад</button>
