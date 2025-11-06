@@ -1,4 +1,4 @@
-// === script.js — ПОЛНАЯ ВЕРСИЯ: ОПЛАТА, МУЛЬТИЯЗЫЧНОСТЬ, НАЧИСЛЕНИЯ, ВСЁ РАБОТАЕТ ===
+// === script.js — ДИНАМИЧЕСКИЕ ДАННЫЕ БЕЗ ИЗМЕНЕНИЯ БАЛАНСА ===
 console.log("CryptoHunter Miner WebApp загружен");
 const tg = window.Telegram?.WebApp;
 
@@ -13,28 +13,273 @@ const CONFIG = {
     REFERRAL_LEVEL2: 2,
     BOT_USERNAME: '@CryptoHunterTonBot'
 };
-// === ЛОКАЛЬНОЕ ХРАНЕНИЕ ДАННЫХ ===
-function getSavedData() {
-    let data = localStorage.getItem("dashboardData");
-    if (data) return JSON.parse(data);
 
-    const initialData = {
-        lastUpdate: Date.now(),
-        balance: 0,
-        invested: 0,
-        earned: 0,
-        speed: 100,
-        total_users: 5000,
-        active_today: 400,
-        top_investors: [],
-        withdraw_requests: []
-    };
-    localStorage.setItem("dashboardData", JSON.stringify(initialData));
-    return initialData;
+// === ГЕНЕРАТОР СЛУЧАЙНЫХ ДАННЫХ ===
+class DataGenerator {
+    static generateTopInvestors(count = 10) {
+        const names = [
+            "CryptoWolf", "TONHunter", "BlockShark", "SatoshiX", "Moonrider", 
+            "Tonik", "WhaleMan", "CryptoGirl", "MinerX", "CoinNinja",
+            "BitPilot", "TonLord", "RocketMan", "ChainQueen", "CryptoKing",
+            "DigitalBull", "TonWhale", "BlockMaster", "CoinHunter", "ProfitSeeker"
+        ];
+        
+        const shuffled = [...names].sort(() => Math.random() - 0.5);
+        return shuffled.slice(0, count).map((name, index) => {
+            let amount;
+            if (index < 3) amount = (Math.random() * 15000 + 5000).toFixed(2);
+            else if (index < 7) amount = (Math.random() * 4000 + 1000).toFixed(2);
+            else amount = (Math.random() * 900 + 100).toFixed(2);
+            
+            return {
+                name,
+                amount: parseFloat(amount),
+                change: (Math.random() - 0.3) * 10
+            };
+        }).sort((a, b) => b.amount - a.amount);
+    }
+
+    static generateWithdrawRequests(count = 8) {
+        const names = ["Andrey", "Oleg", "Ivan", "Maks", "Pavel", "Anna", "Kira", "Vlad", "Denis", "Dima", "Sergey", "Maria"];
+        const statuses = ["completed", "pending", "processing"];
+        
+        return Array.from({length: count}, () => {
+            const name = names[Math.floor(Math.random() * names.length)];
+            const amount = (Math.random() * 500 + 10).toFixed(2);
+            const status = statuses[Math.floor(Math.random() * statuses.length)];
+            const hoursAgo = Math.floor(Math.random() * 24);
+            
+            return {
+                name,
+                amount: parseFloat(amount),
+                status,
+                timestamp: Date.now() - (hoursAgo * 60 * 60 * 1000),
+                address: this.generateTONAddress()
+            };
+        }).sort((a, b) => b.timestamp - a.timestamp);
+    }
+
+    static generateTONAddress() {
+        const prefixes = ['kQ', 'UQ', 'EQ'];
+        const prefix = prefixes[Math.floor(Math.random() * prefixes.length)];
+        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+        let address = prefix;
+        for (let i = 0; i < 46; i++) {
+            address += chars.charAt(Math.floor(Math.random() * chars.length));
+        }
+        return address;
+    }
+
+    static generateCommunityStats() {
+        const baseSubscribers = 113123;
+        const baseActive = 1247;
+        
+        const subscriberChange = Math.floor(Math.random() * 200 - 50);
+        const activeChange = Math.floor(Math.random() * 100 - 20);
+        
+        return {
+            totalSubscribers: baseSubscribers + subscriberChange,
+            activeToday: Math.max(800, baseActive + activeChange),
+            onlineNow: Math.floor(Math.random() * 300 + 200)
+        };
+    }
 }
 
-function saveData(data) {
-    localStorage.setItem("dashboardData", JSON.stringify(data));
+// === ДИНАМИЧЕСКОЕ ОБНОВЛЕНИЕ ДАННЫХ ===
+class DynamicDataManager {
+    constructor() {
+        this.updateIntervals = {};
+        this.currentData = this.loadInitialData();
+    }
+
+    loadInitialData() {
+        const saved = localStorage.getItem("cryptoDynamicData");
+        if (saved) {
+            return JSON.parse(saved);
+        }
+
+        return {
+            lastUpdated: Date.now(),
+            topInvestors: DataGenerator.generateTopInvestors(),
+            withdrawRequests: DataGenerator.generateWithdrawRequests(),
+            communityStats: DataGenerator.generateCommunityStats()
+        };
+    }
+
+    saveData() {
+        this.currentData.lastUpdated = Date.now();
+        localStorage.setItem("cryptoDynamicData", JSON.stringify(this.currentData));
+    }
+
+    startDynamicUpdates() {
+        // Обновление топа инвесторов каждые 2 минуты
+        this.updateIntervals.topInvestors = setInterval(() => {
+            this.updateTopInvestors();
+        }, 120000);
+
+        // Обновление заявок на вывод каждую минуту
+        this.updateIntervals.withdrawRequests = setInterval(() => {
+            this.updateWithdrawRequests();
+        }, 60000);
+
+        // Обновление статистики сообщества каждые 30 секунд
+        this.updateIntervals.community = setInterval(() => {
+            this.updateCommunityStats();
+        }, 30000);
+
+        console.log("Динамические обновления запущены");
+    }
+
+    stopDynamicUpdates() {
+        Object.values(this.updateIntervals).forEach(interval => {
+            clearInterval(interval);
+        });
+        this.updateIntervals = {};
+    }
+
+    updateTopInvestors() {
+        const currentInvestors = this.currentData.topInvestors;
+        
+        const updatedInvestors = currentInvestors.map(investor => {
+            const change = (Math.random() - 0.4) * 8;
+            const newAmount = Math.max(100, investor.amount * (1 + change / 100));
+            
+            return {
+                ...investor,
+                amount: parseFloat(newAmount.toFixed(2)),
+                change: parseFloat(change.toFixed(1))
+            };
+        }).sort((a, b) => b.amount - a.amount);
+
+        if (Math.random() < 0.1 && updatedInvestors.length < 15) {
+            const newInvestors = DataGenerator.generateTopInvestors(1);
+            updatedInvestors.push(...newInvestors);
+            updatedInvestors.sort((a, b) => b.amount - a.amount).slice(0, 15);
+        }
+
+        this.currentData.topInvestors = updatedInvestors;
+        this.renderTopInvestors();
+        this.saveData();
+    }
+
+    updateWithdrawRequests() {
+        const currentRequests = this.currentData.withdrawRequests;
+        
+        const updatedRequests = currentRequests.map(request => {
+            if (request.status === 'pending' && Math.random() < 0.3) {
+                return { ...request, status: 'processing' };
+            }
+            if (request.status === 'processing' && Math.random() < 0.2) {
+                return { ...request, status: 'completed' };
+            }
+            return request;
+        }).filter(request => {
+            if (request.status === 'completed') {
+                return Date.now() - request.timestamp < 24 * 60 * 60 * 1000;
+            }
+            return true;
+        });
+
+        if (Math.random() < 0.3) {
+            const newRequests = DataGenerator.generateWithdrawRequests(1);
+            updatedRequests.unshift(...newRequests);
+            
+            if (updatedRequests.length > 12) {
+                updatedRequests.splice(12);
+            }
+        }
+
+        this.currentData.withdrawRequests = updatedRequests;
+        this.renderWithdrawRequests();
+        this.saveData();
+    }
+
+    updateCommunityStats() {
+        this.currentData.communityStats = DataGenerator.generateCommunityStats();
+        this.renderCommunityStats();
+        this.saveData();
+    }
+
+    // === ОТРИСОВКА ДАННЫХ ===
+    renderTopInvestors() {
+        const container = document.getElementById("top-investors-list");
+        if (!container) return;
+
+        const investors = this.currentData.topInvestors.slice(0, 10);
+        
+        container.innerHTML = investors.map((investor, index) => {
+            const changeClass = investor.change >= 0 ? 'positive' : 'negative';
+            const changeSymbol = investor.change >= 0 ? '↗' : '↘';
+            
+            return `
+                <div class="investor-row">
+                    <div class="investor-rank">#${index + 1}</div>
+                    <div class="investor-name">${investor.name}</div>
+                    <div class="investor-amount">${investor.amount.toLocaleString()} TON</div>
+                    <div class="investor-change ${changeClass}">${changeSymbol} ${Math.abs(investor.change).toFixed(1)}%</div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    renderWithdrawRequests() {
+        const container = document.getElementById("withdraw-requests-list");
+        if (!container) return;
+
+        const requests = this.currentData.withdrawRequests.slice(0, 10);
+        
+        container.innerHTML = requests.map(request => {
+            const shortAddress = request.address.slice(0, 8) + '...' + request.address.slice(-8);
+            const timeAgo = this.getTimeAgo(request.timestamp);
+            const statusClass = request.status;
+            
+            return `
+                <div class="withdraw-row ${statusClass}">
+                    <div class="withdraw-user">${request.name}</div>
+                    <div class="withdraw-amount">${request.amount} TON</div>
+                    <div class="withdraw-address">${shortAddress}</div>
+                    <div class="withdraw-status ${statusClass}">${this.getStatusText(request.status)}</div>
+                    <div class="withdraw-time">${timeAgo}</div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    renderCommunityStats() {
+        const stats = this.currentData.communityStats;
+        
+        const totalSubscribersEl = document.getElementById("total-subscribers");
+        const activeTodayEl = document.getElementById("active-today");
+        
+        if (totalSubscribersEl) totalSubscribersEl.textContent = stats.totalSubscribers.toLocaleString();
+        if (activeTodayEl) activeTodayEl.textContent = `+${stats.activeToday.toLocaleString()}`;
+    }
+
+    getTimeAgo(timestamp) {
+        const diff = Date.now() - timestamp;
+        const hours = Math.floor(diff / (1000 * 60 * 60));
+        const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+        
+        if (hours > 0) return `${hours}ч ${minutes}м назад`;
+        return `${minutes}м назад`;
+    }
+
+    getStatusText(status) {
+        const statusTexts = {
+            'pending': 'Ожидание',
+            'processing': 'В процессе', 
+            'completed': 'Выполнен'
+        };
+        return statusTexts[status] || status;
+    }
+
+    // Инициализация и отображение начальных данных
+    initialize() {
+        this.renderTopInvestors();
+        this.renderWithdrawRequests();
+        this.renderCommunityStats();
+        this.startDynamicUpdates();
+    }
 }
 
 // === ПЕРЕВОДЫ ===
@@ -214,7 +459,7 @@ let currentLanguage = 'ru';
 let currentUserData = null;
 let currentDepositId = null;
 let paymentCheckInterval = null;
-let hourlyAccrualInterval = null;
+let dynamicDataManager = null;
 
 // === ПОЛУЧИТЬ initData ===
 function getInitData() {
@@ -260,33 +505,6 @@ function showSection(id) {
     if (id === 'withdraw') updateWithdrawInfo();
     if (id === 'invest') stopPaymentChecking();
 }
-function updateDashboardDaily() {
-    const data = getSavedData();
-    const now = Date.now();
-    const DAY_MS = 24 * 60 * 60 * 1000;
-    const daysPassed = Math.floor((now - data.lastUpdate) / DAY_MS);
-
-    if (daysPassed > 0) {
-        data.lastUpdate = now;
-        // увеличиваем показатели
-        data.balance += 0.01 * daysPassed;
-        data.earned += 0.01 * daysPassed;
-        data.invested += 0.005 * daysPassed;
-
-        data.total_users += 10 * daysPassed;
-        data.active_today = Math.min(data.total_users, data.active_today + 5 * daysPassed);
-
-        saveData(data);
-    }
-
-    // обновляем UI
-    document.getElementById("balance").textContent = data.balance.toFixed(4);
-    document.getElementById("invested").textContent = data.invested.toFixed(2);
-    document.getElementById("earned").textContent = data.earned.toFixed(4);
-    document.getElementById("speed").textContent = data.speed + "%";
-    document.getElementById("total-subscribers").textContent = data.total_users;
-    document.getElementById("active-today").textContent = data.active_today;
-}
 
 // === УВЕДОМЛЕНИЯ ===
 function showNotification(msgKey, type = 'info', extra = '') {
@@ -298,22 +516,6 @@ function showNotification(msgKey, type = 'info', extra = '') {
     n.style.background = type === 'error' ? '#ff4444' : type === 'success' ? '#00ff88' : '#00ccff';
     n.classList.add('show');
     setTimeout(() => n.classList.remove('show'), 3000);
-}
-
-// === АНИМАЦИЯ ЧИСЕЛ ===
-function animateValue(id, end, duration = 600) {
-    const el = document.getElementById(id);
-    if (!el) return;
-    const start = parseFloat(el.textContent) || 0;
-    const range = end - start;
-    const startTime = performance.now();
-    function step(time) {
-        const elapsed = time - startTime;
-        const progress = Math.min(elapsed / duration, 1);
-        el.textContent = (start + range * progress).toFixed(4);
-        if (progress < 1) requestAnimationFrame(step);
-    }
-    requestAnimationFrame(step);
 }
 
 // === ЗАГРУЗКА ДАННЫХ ПОЛЬЗОВАТЕЛЯ ===
@@ -329,33 +531,15 @@ async function loadUserData() {
         if (res.ok) {
             const data = await res.json();
             currentUserData = data;
-            animateValue('balance', parseFloat(data.balance));
+            document.getElementById('balance').textContent = Number(data.balance).toFixed(4);
             document.getElementById('invested').textContent = Number(data.invested).toFixed(2);
             document.getElementById('earned').textContent = Number(data.earned).toFixed(4);
             document.getElementById('speed').textContent = data.speed;
             updateWithdrawInfo();
-            startHourlyAccrual();
         }
     } catch (e) {
         showNotification('server_sleeping', 'error');
     }
-}
-
-// === АВТО-НАЧИСЛЕНИЯ ===
-function startHourlyAccrual() {
-    if (hourlyAccrualInterval) clearInterval(hourlyAccrualInterval);
-    hourlyAccrualInterval = setInterval(() => {
-        if (!currentUserData) return;
-        const invested = parseFloat(currentUserData.invested) || 0;
-        const hourly = (invested * CONFIG.DAILY_RATE) / 24 / 100;
-        const newBal = (parseFloat(currentUserData.balance) || 0) + hourly;
-        currentUserData.balance = newBal.toFixed(4);
-        currentUserData.earned = (parseFloat(currentUserData.earned) || 0) + hourly;
-        animateValue('balance', newBal);
-        document.getElementById('earned').textContent = currentUserData.earned.toFixed(4);
-        showNotification('accrued', 'success', `+${hourly.toFixed(4)} TON`);
-        if (document.getElementById('dashboard').classList.contains('active')) loadDashboardData();
-    }, 60000); // 1 минута
 }
 
 // === ДАШБОРД ===
@@ -416,54 +600,25 @@ async function loadReferralData() {
     }
 }
 
-// === КАЛЬКУЛЯТОР ===
-window.calculate = async function() {
-    const amount = parseFloat(document.getElementById('calc-amount').value);
-    if (!amount || amount < CONFIG.MIN_INVEST) return showNotification('min_invest_error', 'error');
-    try {
-        const res = await fetch(`${CONFIG.API_BASE}/api/calc`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ amount })
-        });
-        if (res.ok) {
-            const data = await res.json();
-            updateCalculatorResults(amount, data);
-        } else {
-            calculateLocally(amount);
-        }
-    } catch (e) {
-        calculateLocally(amount);
+// === КОПИРОВАНИЕ ===
+function copyToClipboard(text, successKey) {
+    if (!text) return showNotification("no_address", "error");
+    if (navigator.clipboard) {
+        navigator.clipboard.writeText(text).then(() => showNotification(successKey, "success")).catch(() => fallbackCopy(text, successKey));
+    } else {
+        fallbackCopy(text, successKey);
     }
-};
-
-function calculateLocally(amount) {
-    const daily = amount * (CONFIG.DAILY_RATE / 100);
-    const bonus = amount * (CONFIG.BONUS_PERCENT / 100);
-    const el = document.getElementById('calc-result');
-    if (el) {
-        el.innerHTML = `
-            <div class="calc-result-item"><span>${translations[currentLanguage]['day']}</span><b>${daily.toFixed(4)} TON</b></div>
-            <div class="calc-result-item"><span>${translations[currentLanguage]['week']}</span><b>${(daily * 7).toFixed(4)} TON</b></div>
-            <div class="calc-result-item"><span>${translations[currentLanguage]['month']}</span><b>${(daily * 30).toFixed(4)} TON</b></div>
-            <div class="calc-result-item"><span>${translations[currentLanguage]['year']}</span><b>${(daily * 365).toFixed(4)} TON</b></div>
-            <div class="calc-result-item"><span>${translations[currentLanguage]['investment_bonus']}</span><b>+${bonus.toFixed(2)} TON</b></div>
-        `;
-    }
-    showNotification('calc_local', 'info');
 }
 
-function updateCalculatorResults(amount, data) {
-    const el = document.getElementById('calc-result');
-    if (el) {
-        el.innerHTML = `
-            <div class="calc-result-item"><span>${translations[currentLanguage]['day']}</span><b>${data.daily.toFixed(4)} TON</b></div>
-            <div class="calc-result-item"><span>${translations[currentLanguage]['week']}</span><b>${(data.daily * 7).toFixed(4)} TON</b></div>
-            <div class="calc-result-item"><span>${translations[currentLanguage]['month']}</span><b>${data.monthly.toFixed(4)} TON</b></div>
-            <div class="calc-result-item"><span>${translations[currentLanguage]['year']}</span><b>${data.yearly.toFixed(4)} TON</b></div>
-            <div class="calc-result-item"><span>${translations[currentLanguage]['investment_bonus']}</span><b>+${(amount * CONFIG.BONUS_PERCENT / 100).toFixed(2)} TON</b></div>
-        `;
-    }
+function fallbackCopy(text, successKey) {
+    const ta = document.createElement("textarea");
+    ta.value = text;
+    ta.style.position = "fixed"; ta.style.opacity = "0";
+    document.body.appendChild(ta);
+    ta.focus(); ta.select();
+    try { document.execCommand("copy"); showNotification(successKey, "success"); }
+    catch { showNotification("copy_error", "error"); }
+    document.body.removeChild(ta);
 }
 
 // === СОЗДАНИЕ ДЕПОЗИТА ===
@@ -495,9 +650,6 @@ window.createDeposit = async function() {
             const qrAddress = document.getElementById("qr-address");
             const qrComment = document.getElementById("qr-comment");
             const paymentUrl = document.getElementById("payment-url");
-            const checkBtn = document.getElementById("checkPaymentBtn");
-            const copyAddressBtn = document.getElementById("copyAddressBtn");
-            const copyPaymentUrlBtn = document.getElementById("copyPaymentUrlBtn");
 
             if (qrImg) qrImg.src = data.qr_code || "";
             if (qrAddress) qrAddress.textContent = data.address || "—";
@@ -505,15 +657,6 @@ window.createDeposit = async function() {
             if (paymentUrl) {
                 paymentUrl.href = data.payment_url || "#";
                 paymentUrl.textContent = data.payment_url || "Открыть в кошельке";
-            }
-
-            if (copyAddressBtn) copyAddressBtn.onclick = () => copyToClipboard(data.address, "address_copied");
-            if (copyPaymentUrlBtn) copyPaymentUrlBtn.onclick = () => copyToClipboard(data.payment_url, "payment_url_copied");
-
-            if (checkBtn) {
-                checkBtn.style.display = "block";
-                checkBtn.innerHTML = `<span data-i18n="check_payment">${translations[currentLanguage].check_payment}</span>`;
-                checkBtn.onclick = checkPaymentManually;
             }
 
             if (qrSection) {
@@ -534,53 +677,7 @@ window.createDeposit = async function() {
     }
 };
 
-// === КОПИРОВАНИЕ ===
-function copyToClipboard(text, successKey) {
-    if (!text) return showNotification("no_address", "error");
-    if (navigator.clipboard) {
-        navigator.clipboard.writeText(text).then(() => showNotification(successKey, "success")).catch(() => fallbackCopy(text, successKey));
-    } else {
-        fallbackCopy(text, successKey);
-    }
-}
-
-function fallbackCopy(text, successKey) {
-    const ta = document.createElement("textarea");
-    ta.value = text;
-    ta.style.position = "fixed"; ta.style.opacity = "0";
-    document.body.appendChild(ta);
-    ta.focus(); ta.select();
-    try { document.execCommand("copy"); showNotification(successKey, "success"); }
-    catch { showNotification("copy_error", "error"); }
-    document.body.removeChild(ta);
-}
-
 // === ПРОВЕРКА ПЛАТЕЖА ===
-function checkPaymentManually() {
-    if (!currentDepositId) return;
-    showNotification("payment_checking", "info");
-    fetch("/api/check-payment", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "X-Telegram-WebApp-Init-Data": getInitData() },
-        body: JSON.stringify({ deposit_id: currentDepositId })
-    })
-    .then(r => r.json())
-    .then(res => {
-        if (res.status === 'completed') {
-            stopPaymentChecking();
-            showNotification(`payment_confirmed ${res.bonus?.toFixed(4) || 0} TON`, 'success');
-            loadUserData(); loadDashboardData();
-            setTimeout(() => {
-                const qr = document.getElementById("qr-section"); if (qr) qr.style.display = 'none';
-                const btn = document.getElementById("checkPaymentBtn"); if (btn) btn.style.display = 'none';
-            }, 3000);
-        } else {
-            showNotification('payment_pending', 'info');
-        }
-    })
-    .catch(() => showNotification('payment_error', 'error'));
-}
-
 function startPaymentChecking(id) {
     stopPaymentChecking();
     paymentCheckInterval = setInterval(async () => {
@@ -598,7 +695,6 @@ function startPaymentChecking(id) {
                     loadUserData(); loadDashboardData();
                     setTimeout(() => {
                         const qr = document.getElementById("qr-section"); if (qr) qr.style.display = 'none';
-                        const btn = document.getElementById("checkPaymentBtn"); if (btn) btn.style.display = 'none';
                     }, 3000);
                 } else if (d.status === 'expired') {
                     stopPaymentChecking();
@@ -637,7 +733,6 @@ window.withdraw = async function() {
         if (res.ok) {
             if (statusEl) { statusEl.textContent = result.message || (currentLanguage === 'ru' ? 'Запрос отправлен' : 'Request sent'); statusEl.className = 'status-message status-success'; }
             showNotification('withdraw_success', 'success');
-            addWithdrawRequest(addr, amount);
             document.getElementById('withdraw-address').value = '';
             document.getElementById('withdraw-amount').value = '';
             setTimeout(() => { loadUserData(); updateWithdrawInfo(); }, 1000);
@@ -649,18 +744,6 @@ window.withdraw = async function() {
         showNotification('connection_error', 'error');
     }
 };
-
-function addWithdrawRequest(wallet, amount) {
-    const short = wallet.slice(0,6) + '...' + wallet.slice(-4);
-    const list = document.getElementById('withdraw-requests-list');
-    if (list) {
-        const item = document.createElement('div');
-        item.className = 'withdraw-request-item';
-        item.innerHTML = `<div>${short}</div><div>${amount} TON</div><div>Ready</div>`;
-        list.prepend(item);
-        if (list.children.length > 10) list.removeChild(list.lastChild);
-    }
-}
 
 // === РЕФЕРАЛЬНАЯ ССЫЛКА ===
 window.copyLink = function() {
@@ -690,11 +773,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const lang = localStorage.getItem('preferredLanguage') || 'ru';
     changeLanguage(lang);
 
-    const copyAddrBtn = document.getElementById('copyAddressBtn');
-    if (copyAddrBtn) copyAddrBtn.addEventListener('click', () => copyToClipboard(document.getElementById('qr-address')?.textContent, "address_copied"));
-
-    const copyUrlBtn = document.getElementById('copyPaymentUrlBtn');
-    if (copyUrlBtn) copyUrlBtn.addEventListener('click', () => copyToClipboard(document.getElementById('payment-url')?.href, "payment_url_copied"));
+    // Инициализация динамических данных
+    dynamicDataManager = new DynamicDataManager();
+    dynamicDataManager.initialize();
 
     showSection('stats');
     loadUserData();
@@ -703,109 +784,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const refreshBtn = document.getElementById('refresh-btn');
     if (refreshBtn) refreshBtn.addEventListener('click', refresh);
 });
-// === Генерация динамической статистики ===
-
-// Получаем сохранённые значения из localStorage
-let statsData = JSON.parse(localStorage.getItem("cryptoStats")) || {
-    totalSubscribers: 113123,
-    activeToday: 1247,
-    lastUpdated: new Date().toDateString(),
-    topInvestors: [],
-    withdrawRequests: []
-};
-
-// Проверяем, новый ли день
-const today = new Date().toDateString();
-if (statsData.lastUpdated !== today) {
-    // Увеличиваем показатели каждый день случайно в пределах диапазона
-    statsData.totalSubscribers += Math.floor(Math.random() * 400 + 200); // +200..600
-    statsData.activeToday = Math.floor(Math.random() * 2000 + 800); // 800..2800
-
-    // Генерируем новый топ инвесторов
-    statsData.topInvestors = generateTopInvestors();
-
-    // Генерируем заявки на вывод
-    statsData.withdrawRequests = generateWithdrawRequests();
-
-    statsData.lastUpdated = today;
-    localStorage.setItem("cryptoStats", JSON.stringify(statsData));
-}
-
-// === Отображаем всё на странице ===
-document.getElementById("total-subscribers").textContent = statsData.totalSubscribers.toLocaleString();
-document.getElementById("active-today").textContent = `+${statsData.activeToday.toLocaleString()}`;
-renderTopInvestors(statsData.topInvestors);
-renderWithdrawRequests(statsData.withdrawRequests);
-
-// === Функции генерации ===
-
-function generateTopInvestors() {
-    const names = [
-        "CryptoWolf", "TONHunter", "BlockShark", "SatoshiX",
-        "Moonrider", "Tonik", "WhaleMan", "CryptoGirl", "MinerX", "CoinNinja",
-        "BitPilot", "TonLord", "RocketMan", "ChainQueen"
-    ];
-
-    // случайно выбираем 10 имён
-    const shuffled = names.sort(() => 0.5 - Math.random());
-    const top10 = shuffled.slice(0, 10);
-
-    // первые 3-4 — крупные инвесторы
-    return top10.map((name, i) => {
-        let amount;
-        if (i < 3) amount = (Math.random() * 9000 + 10000).toFixed(2); // 10k–19k
-        else amount = (Math.random() * 7000 + 1000).toFixed(2); // 1k–8k
-        return { name, amount };
-    });
-}
-
-function generateWithdrawRequests() {
-    const names = ["Andrey", "Oleg", "Ivan", "Maks", "Pavel", "Anna", "Kira", "Vlad", "Denis", "Dima"];
-    const requests = [];
-    const count = Math.floor(Math.random() * 5 + 5); // 5–10 заявок
-
-    for (let i = 0; i < count; i++) {
-        const name = names[Math.floor(Math.random() * names.length)];
-        const amount = (Math.random() * 200 + 20).toFixed(2); // 20–220 TON
-        requests.push({ name, amount });
-    }
-    return requests;
-}
-
-// === Отрисовка ===
-
-function renderTopInvestors(list) {
-    const container = document.getElementById("top-investors-list");
-    container.innerHTML = "";
-    list.forEach((inv, i) => {
-        const div = document.createElement("div");
-        div.className = "investor-row";
-        div.innerHTML = `<b>#${i + 1}</b> ${inv.name} — <span>${inv.amount} TON</span>`;
-        container.appendChild(div);
-    });
-}
-
-function renderWithdrawRequests(list) {
-    const container = document.getElementById("withdraw-requests-list");
-    container.innerHTML = "";
-    list.forEach(req => {
-        const div = document.createElement("div");
-        div.className = "withdraw-row";
-        div.innerHTML = `${req.name} — <span>${req.amount} TON</span>`;
-        container.appendChild(div);
-    });
-}
 
 // === ГЛОБАЛЬНЫЕ ФУНКЦИИ ===
 window.showSection = showSection;
 window.copyAddress = () => copyToClipboard(document.getElementById('qr-address')?.textContent, "address_copied");
 window.copyPaymentUrl = () => copyToClipboard(document.getElementById('payment-url')?.href, "payment_url_copied");
 window.withdraw = withdraw;
-window.calculate = calculate;
 window.copyLink = copyLink;
 window.changeLanguage = changeLanguage;
 window.createDeposit = createDeposit;
 window.refresh = refresh;
-window.addEventListener("DOMContentLoaded", () => {
-    updateDashboardDaily(); // обновляем данные при загрузке страницы
-});
