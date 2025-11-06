@@ -1,540 +1,656 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CryptoHunter Miner</title>
-    <link rel="stylesheet" href="/webapp/style.css">
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <script src="/webapp/script.js" defer></script>
-    <style>
-        /* ===== ДОПОЛНИТЕЛЬНЫЕ СТИЛИ ДЛЯ QR И ОПЛАТЫ ===== */
-        .payment-card {
-            background: rgba(0, 0, 0, 0.25);
-            border: 1px solid rgba(0, 255, 204, 0.3);
-            border-radius: 20px;
-            padding: 20px;
-            margin-top: 20px;
-            backdrop-filter: blur(10px);
-            text-align: center;
-        }
-        .section-title {
-            font-size: 16px;
-            font-weight: 600;
-            margin-bottom: 16px;
-            color: #00ffcc;
-        }
-        .qr-container {
-            margin-bottom: 20px;
-        }
-        .qr-container img {
-            width: 200px;
-            height: auto;
-            border-radius: 16px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-        }
-        .payment-field {
-            display: flex;
-            flex-direction: column;
-            align-items: flex-start;
-            margin: 14px 0;
-            width: 100%;
-        }
-        .payment-field label {
-            font-size: 13px;
-            color: #aaa;
-            margin-bottom: 6px;
-            font-weight: 500;
-        }
-        .field-value {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            width: 100%;
-            background: rgba(255, 255, 255, 0.1);
-            padding: 10px 12px;
-            border-radius: 12px;
-            font-family: 'Courier New', monospace;
-            font-size: 14px;
-            color: #fff;
-            word-break: break-all;
-            text-align: left;
-        }
-        .copy-mini-btn {
-            background: rgba(0, 255, 204, 0.15);
-            border: 1px solid rgba(0, 255, 204, 0.3);
-            color: #00ffcc;
-            width: 32px;
-            height: 32px;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            font-size: 14px;
-            transition: all 0.2s ease;
-        }
-        .copy-mini-btn:hover {
-            background: rgba(0, 255, 204, 0.3);
-            transform: scale(1.1);
-        }
-        .ton-payment-btn {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            background: linear-gradient(135deg, #00dbde, #fc00ff);
-            color: white;
-            border: none;
-            border-radius: 14px;
-            padding: 14px 20px;
-            font-weight: 700;
-            font-size: 15px;
-            cursor: pointer;
-            margin: 15px auto;
-            width: 100%;
-            max-width: 280px;
-            box-shadow: 0 4px 15px rgba(0, 219, 222, 0.4);
-            transition: all 0.3s ease;
-        }
-        .ton-payment-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(0, 219, 222, 0.6);
-        }
-        .ton-icon {
-            font-size: 18px;
-            font-weight: bold;
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <!-- === ЗАГОЛОВОК === -->
-        <div class="header">
-            <h1>CryptoHunter</h1>
-            <div class="language-switcher">
-                <button id="lang-ru" class="lang-btn active" onclick="changeLanguage('ru')">RU</button>
-                <button id="lang-en" class="lang-btn" onclick="changeLanguage('en')">ENG</button>
-            </div>
-        </div>
+/* ===== BASE STYLES ===== */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+    color: #fff;
+    min-height: 100vh;
+    line-height: 1.6;
+}
+.container {
+    max-width: 400px;
+    margin: 0 auto;
+    padding: 15px;
+}
 
-        <!-- === ГЛАВНЫЙ ЭКРАН === -->
-        <div id="stats" class="section active">
-            <img src="/webapp/assets/mining.gif" alt="Mining" class="mining-gif">
-            
-            <div class="top-actions">
-                <button onclick="showSection('invest')" class="action-btn invest">
-                    <img src="/webapp/assets/deposit.png" alt="Инвестировать" style="width:24px;height:24px;">
-                    <span data-i18n="invest">Инвестировать</span>
-                </button>
-                <button onclick="showSection('withdraw')" class="action-btn withdraw">
-                    <img src="/webapp/assets/withdraw.png" alt="Вывод" style="width:24px;height:24px;">
-                    <span data-i18n="withdraw">Вывод</span>
-                </button>
-            </div>
+/* ===== HEADER ===== */
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    position: relative;
+}
+h1 {
+    font-size: 32px;
+    margin: 12px 0 8px;
+    color: #00ffcc;
+    text-shadow: 0 0 10px #00ffcc;
+    text-align: center;
+    font-weight: 900;
+    flex: 1;
+}
 
-            <div class="balance-card">
-                <p data-i18n="your_balance">ВАШ БАЛАНС</p>
-                <h2 id="balance">0.0000</h2>
-                <p>TON</p>
-            </div>
+/* ===== LANGUAGE SWITCHER ===== */
+.language-switcher {
+    display: flex;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    padding: 4px;
+    gap: 4px;
+    border: 1px solid rgba(0, 255, 204, 0.3);
+}
+.lang-btn {
+    background: transparent;
+    border: none;
+    color: #fff;
+    padding: 6px 12px;
+    border-radius: 16px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    min-width: 40px;
+}
+.lang-btn.active {
+    background: #00ffcc;
+    color: #0f0c29;
+    box-shadow: 0 0 10px rgba(0, 255, 204, 0.5);
+}
+.lang-btn:hover:not(.active) {
+    background: rgba(255, 255, 255, 0.1);
+    transform: scale(1.05);
+}
 
-            <div class="stats-grid">
-                <div class="stat"><p data-i18n="invested">Инвестировано</p><b id="invested">0.00</b></div>
-                <div class="stat"><p data-i18n="earned">Заработано</p><b id="earned">0.0000</b></div>
-                <div class="stat"><p data-i18n="speed">Скорость</p><b id="speed">100%</b></div>
-            </div>
+/* ===== MINING GIF ===== */
+.mining-gif {
+    width: 160px;
+    height: 160px;
+    margin: 18px auto;
+    border-radius: 50%;
+    box-shadow: 0 0 40px rgba(0, 255, 204, 0.6);
+    display: block;
+    object-fit: cover;
+}
 
-            <div class="nav-buttons">
-                <button onclick="showSection('dashboard')" class="nav-btn">
-                    <img src="/webapp/assets/stats.png" alt="Статистика" style="width:18px;height:18px;">
-                    <span data-i18n="detailed_stats">Детальная статистика</span>
-                </button>
-                <button onclick="showSection('referral')" class="nav-btn">
-                    <img src="/webapp/assets/referral.png" alt="Рефералы" style="width:18px;height:18px;">
-                    <span data-i18n="referral_program">Реферальная программа</span>
-                </button>
-            </div>
+/* ===== TOP ACTIONS ===== */
+.top-actions {
+    display: flex;
+    gap: 16px;
+    margin: 22px 0 28px;
+    justify-content: center;
+}
+.action-btn {
+    flex: 1;
+    background: rgba(0, 255, 204, 0.18);
+    border: 2.5px solid #00ffcc;
+    border-radius: 20px;
+    padding: 18px 12px;
+    color: #fff;
+    font-weight: 800;
+    font-size: 15px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.35s ease;
+    cursor: pointer;
+}
+.action-btn:hover {
+    background: rgba(0, 255, 204, 0.35);
+    transform: translateY(-5px);
+}
 
-            <button id="refresh-btn" class="btn big-btn" style="margin:20px auto;display:block;background:#4CAF50;" onclick="refresh()">
-                <span data-i18n="refresh">Обновить</span>
-            </button>
-        </div>
+/* ===== BALANCE CARD ===== */
+.balance-card {
+    background: linear-gradient(135deg, rgba(0,255,204,0.15), rgba(0,255,204,0.05));
+    border: 2.5px solid #00ffcc;
+    border-radius: 24px;
+    padding: 22px;
+    margin: 25px 0;
+    text-align: center;
+}
+.balance-card h2 {
+    font-size: 38px;
+    color: #00ffcc;
+    font-weight: 900;
+    margin: 10px 0;
+}
 
-        <!-- === ДЕТАЛЬНАЯ СТАТИСТИКА === -->
-        <div id="dashboard" class="section">
-            <div class="card">
-                <h2 data-i18n="detailed_stats">Детальная статистика</h2>
-                
-                <div class="stats-section">
-                    <h3 data-i18n="community">СООБЩЕСТВО</h3>
-                    <div class="stat-row">
-                        <span data-i18n="total_subscribers">Всего подписчиков:</span>
-                        <b id="total-subscribers">0</b>
-                    </div>
-                    <div class="stat-row">
-                        <span data-i18n="active_today">Активных сегодня:</span>
-                        <b id="active-today">0</b>
-                    </div>
-                </div>
+/* ===== STATS GRID ===== */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+    margin: 28px 0;
+}
+.stat {
+    background: rgba(255, 255, 255, 0.09);
+    padding: 16px 10px;
+    border-radius: 18px;
+    text-align: center;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+.stat b {
+    display: block;
+    font-size: 19px;
+    color: #00ffcc;
+    font-weight: 800;
+}
 
-                <div class="stats-section">
-                    <h3 data-i18n="investments">ИНВЕСТИЦИИ</h3>
-                    <div class="stat-row"><span data-i18n="amount">Сумма:</span><b id="dash-invested">0.00 TON</b></div>
-                    <div class="stat-row"><span data-i18n="day">День:</span><b id="dash-daily-inv">0.000 TON</b></div>
-                    <div class="stat-row"><span data-i18n="week">Неделя:</span><b id="dash-weekly-inv">0.000 TON</b></div>
-                    <div class="stat-row"><span data-i18n="month">Месяц:</span><b id="dash-monthly-inv">0.00 TON</b></div>
-                </div>
+/* ===== NAV BUTTONS ===== */
+.nav-buttons {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 14px;
+    margin: 32px 0 20px;
+}
+.nav-btn {
+    background: linear-gradient(135deg, #00ffcc, #00ccaa);
+    color: #000;
+    border: none;
+    padding: 16px;
+    border-radius: 18px;
+    font-weight: 800;
+    font-size: 15px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    transition: all 0.3s ease;
+}
+.nav-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0, 255, 204, 0.4);
+}
 
-                <div class="stats-section">
-                    <h3 data-i18n="free_mining">БЕСПЛАТНЫЙ МАЙНИНГ</h3>
-                    <div class="stat-row"><span data-i18n="speed">Скорость:</span><b id="dash-speed">100%</b></div>
-                    <div class="stat-row"><span data-i18n="day">День:</span><b id="dash-daily-free">0.0000 TON</b></div>
-                    <div class="stat-row"><span data-i18n="ton_per_days">1 TON за:</span><b id="dash-days-per-ton">0.0 дней</b></div>
-                    <div class="stat-row"><span data-i18n="accumulated">Накоплено:</span><b id="dash-accumulated">0.00 TON</b></div>
-                </div>
+/* ===== CARDS ===== */
+.card {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    padding: 20px;
+    margin-bottom: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+}
+.card h2 {
+    font-size: 18px;
+    margin-bottom: 15px;
+    color: #00ffcc;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
 
-                <div class="stats-section">
-                    <h3 data-i18n="currently_earning">СЕЙЧАС НАЧИСЛЯЕТСЯ</h3>
-                    <div class="stat-row"><span data-i18n="per_day">В день:</span><b id="dash-total-daily">0.0000 TON</b></div>
-                    <div class="stat-row"><span data-i18n="per_hour">В час:</span><b id="dash-hourly">0.0000 TON</b></div>
-                </div>
+/* ===== DASHBOARD STYLES ===== */
+.stats-section {
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+.stats-section h3 {
+    font-size: 16px;
+    margin-bottom: 12px;
+    color: #00ffcc;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.stats-section:last-child {
+    border-bottom: none;
+}
+.stat-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 8px;
+    font-size: 14px;
+    align-items: center;
+}
+.stat-row:last-child {
+    margin-bottom: 0;
+}
 
-                <!-- ТОП 10 ИНВЕСТОРОВ -->
-                <div class="stats-section">
-                    <h3 data-i18n="top_investors">ТОП 10 ИНВЕСТОРОВ</h3>
-                    <div id="top-investors-list" class="list-box">
-                        <div class="investor-row">
-                            <div class="investor-rank">#1</div>
-                            <div class="investor-name">CryptoWolf</div>
-                            <div class="investor-amount">15,245.50 TON</div>
-                            <div class="investor-change positive">↗ 2.3%</div>
-                        </div>
-                        <div class="investor-row">
-                            <div class="investor-rank">#2</div>
-                            <div class="investor-name">TONHunter</div>
-                            <div class="investor-amount">12,890.25 TON</div>
-                            <div class="investor-change positive">↗ 1.8%</div>
-                        </div>
-                        <div class="investor-row">
-                            <div class="investor-rank">#3</div>
-                            <div class="investor-name">BlockShark</div>
-                            <div class="investor-amount">11,567.80 TON</div>
-                            <div class="investor-change negative">↘ 0.5%</div>
-                        </div>
-                        <div class="investor-row">
-                            <div class="investor-rank">#4</div>
-                            <div class="investor-name">Moonrider</div>
-                            <div class="investor-amount">8,945.30 TON</div>
-                            <div class="investor-change positive">↗ 3.1%</div>
-                        </div>
-                        <div class="investor-row">
-                            <div class="investor-rank">#5</div>
-                            <div class="investor-name">Tonik</div>
-                            <div class="investor-amount">7,234.15 TON</div>
-                            <div class="investor-change positive">↗ 1.2%</div>
-                        </div>
-                    </div>
-                </div>
+/* ===== УЛУЧШЕННЫЕ СТИЛИ ДЛЯ ТОП ИНВЕСТОРОВ ===== */
+.top-investors-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 8px;
+    margin-top: 12px;
+}
 
-                <!-- ЗАЯВКИ НА ВЫВОД -->
-                <div class="stats-section">
-                    <h3 data-i18n="withdraw_requests">ЗАЯВКИ НА ВЫВОД</h3>
-                    <div id="withdraw-requests-list" class="list-box">
-                        <div class="withdraw-row completed">
-                            <div class="withdraw-user">Andrey</div>
-                            <div class="withdraw-amount">125.50 TON</div>
-                            <div class="withdraw-address">kQ1234...abcd</div>
-                            <div class="withdraw-status completed">Выполнен</div>
-                            <div class="withdraw-time">2ч 15м назад</div>
-                        </div>
-                        <div class="withdraw-row processing">
-                            <div class="withdraw-user">Ivan</div>
-                            <div class="withdraw-amount">89.75 TON</div>
-                            <div class="withdraw-address">UQ5678...efgh</div>
-                            <div class="withdraw-status processing">В процессе</div>
-                            <div class="withdraw-time">45м назад</div>
-                        </div>
-                        <div class="withdraw-row pending">
-                            <div class="withdraw-user">Anna</div>
-                            <div class="withdraw-amount">234.20 TON</div>
-                            <div class="withdraw-address">EQ9012...ijkl</div>
-                            <div class="withdraw-status pending">Ожидание</div>
-                            <div class="withdraw-time">15м назад</div>
-                        </div>
-                        <div class="withdraw-row completed">
-                            <div class="withdraw-user">Sergey</div>
-                            <div class="withdraw-amount">67.80 TON</div>
-                            <div class="withdraw-address">kQ3456...mnop</div>
-                            <div class="withdraw-status completed">Выполнен</div>
-                            <div class="withdraw-time">5ч 30м назад</div>
-                        </div>
-                    </div>
-                </div>
+.investor-item {
+    display: flex;
+    align-items: center;
+    padding: 14px 16px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    border-left: 4px solid #00ffcc;
+    transition: all 0.3s ease;
+    animation: slideInFromRight 0.5s ease;
+}
 
-                <div class="stats-section">
-                    <h3>Вывод</h3>
-                    <div class="stat-row"><span id="dash-withdraw-status">- <span data-i18n="not_ready">Не готово</span></span></div>
-                    <div class="stat-row"><span id="dash-min-withdraw" data-i18n="min_withdraw">Минимум: 1 TON (1.00 TON осталось)</span></div>
-                </div>
-            </div>
-            <button onclick="showSection('stats')" class="btn back" data-i18n="back">Назад</button>
-        </div>
+.investor-item:hover {
+    background: rgba(255, 255, 255, 0.08);
+    transform: translateX(4px);
+}
 
-        <!-- === РЕФЕРАЛЫ === -->
-        <div id="referral" class="section">
-            <div class="card">
-                <h2 data-i18n="referral_program">Реферальная программа</h2>
-                
-                <div class="ref-stats">
-                    <div class="ref-stat">
-                        <div class="ref-stat-value" id="ref-direct">0</div>
-                        <div class="ref-stat-label" data-i18n="direct_referrals">прямых рефералов</div>
-                    </div>
-                    <div class="ref-stat">
-                        <div class="ref-stat-value" id="ref-level2">0</div>
-                        <div class="ref-stat-label" data-i18n="level_2">2-й уровень</div>
-                    </div>
-                    <div class="ref-stat">
-                        <div class="ref-stat-value" id="ref-income">0.00</div>
-                        <div class="ref-stat-label" data-i18n="earned_ton">Заработано TON</div>
-                    </div>
-                </div>
+.investor-rank {
+    font-weight: bold;
+    color: #00ffcc;
+    min-width: 40px;
+    font-size: 16px;
+    text-align: center;
+}
 
-                <div class="ref-link-container">
-                    <p data-i18n="your_referral_link">Ваша реферальная ссылка:</p>
-                    <div class="ref-link-box" id="ref-link">https://t.me/cruptos023bot?start=ref_123</div>
-                    <button onclick="copyLink()" class="btn copy-btn" data-i18n="copy_link">Скопировать ссылку</button>
-                </div>
-            </div>
-            <button onclick="showSection('stats')" class="btn back" data-i18n="back">Назад</button>
-        </div>
+.investor-info {
+    flex: 1;
+    margin: 0 15px;
+}
 
-        <!-- === ИНВЕСТ + КАЛЬКУЛЯТОР === -->
-        <div id="invest" class="section">
-            <div class="card">
-                <h2 data-i18n="investing">Инвестирование</h2>
-                
-                <!-- КАЛЬКУЛЯТОР ДОХОДНОСТИ -->
-                <div class="calculator-section" style="margin-bottom: 25px; padding: 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 16px; color: white;">
-                    <h3 style="margin: 0 0 15px 0; text-align: center;" data-i18n="profit_calculator">Калькулятор доходности</h3>
-                    
-                    <div class="input-group" style="margin-bottom: 15px;">
-                        <label style="color: white;" data-i18n="investment_amount">Сумма инвестиции (TON):</label>
-                        <input type="number" id="calc-amount" class="input-field" 
-                               placeholder="Введите сумму" min="1" value="10" 
-                               style="background: rgba(255,255,255,0.9); color: #333;"
-                               oninput="calculateProfit()">
-                    </div>
-                    
-                    <div class="calculator-results" style="background: rgba(255,255,255,0.15); padding: 15px; border-radius: 12px; backdrop-filter: blur(10px);">
-                        <div class="calc-result-row">
-                            <span data-i18n="daily_income">Доход в день:</span>
-                            <b id="calc-daily">0.0000 TON</b>
-                        </div>
-                        <div class="calc-result-row">
-                            <span data-i18n="weekly_income">Доход в неделю:</span>
-                            <b id="calc-weekly">0.0000 TON</b>
-                        </div>
-                        <div class="calc-result-row">
-                            <span data-i18n="monthly_income">Доход в месяц:</span>
-                            <b id="calc-monthly">0.0000 TON</b>
-                        </div>
-                        <div class="calc-result-row">
-                            <span data-i18n="yearly_income">Доход в год:</span>
-                            <b id="calc-yearly">0.0000 TON</b>
-                        </div>
-                        <div class="calc-result-row" style="border-top: 1px solid rgba(255,255,255,0.3); padding-top: 10px; margin-top: 10px;">
-                            <span data-i18n="welcome_bonus">Приветственный бонус:</span>
-                            <b id="calc-bonus" style="color: #4CAF50;">+0.00 TON</b>
-                        </div>
-                    </div>
-                </div>
+.investor-name {
+    font-weight: 600;
+    font-size: 15px;
+    color: #fff;
+    margin-bottom: 4px;
+}
 
-                <!-- ФОРМА ИНВЕСТИРОВАНИЯ -->
-                <div class="input-group">
-                    <label data-i18n="investment_amount">Сумма инвестиции (TON):</label>
-                    <input type="number" id="invest-amount" class="input-field" placeholder="Минимум 1 TON" min="1">
-                </div>
+.investor-amount {
+    font-weight: bold;
+    font-size: 16px;
+    color: #FFD700;
+}
 
-                <button onclick="createDeposit()" class="btn big-btn">Сгенерировать QR для оплаты</button>
+.investor-change {
+    font-size: 12px;
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-weight: bold;
+    min-width: 60px;
+    text-align: center;
+}
 
-                <!-- УЛУЧШЕННЫЙ БЛОК ОПЛАТЫ -->
-                <div id="qr-section" style="display:none;">
-                    <div class="payment-card">
-                        <p class="section-title" data-i18n="scan_qr">Отсканируйте QR-код для оплаты</p>
-                        <div class="qr-container">
-                            <img id="qr-img" alt="QR Code">
-                        </div>
+.investor-change.positive {
+    background: rgba(76, 175, 80, 0.2);
+    color: #4CAF50;
+    border: 1px solid rgba(76, 175, 80, 0.3);
+}
 
-                        <div class="payment-field">
-                            <label data-i18n="ton_address">Адрес TON</label>
-                            <div class="field-value">
-                                <code id="qr-address-short">—</code>
-                                <button class="copy-mini-btn" onclick="copyAddress()">📋</button>
-                            </div>
-                        </div>
+.investor-change.negative {
+    background: rgba(244, 67, 54, 0.2);
+    color: #F44336;
+    border: 1px solid rgba(244, 67, 54, 0.3);
+}
 
-                        <div class="payment-field">
-                            <label data-i18n="comment">Комментарий</label>
-                            <div class="field-value">
-                                <code id="qr-comment-text">—</code>
-                                <button class="copy-mini-btn" onclick="copyComment()">📋</button>
-                            </div>
-                        </div>
+/* Цвета для топ-3 */
+.investor-item:nth-child(1) {
+    border-left-color: gold;
+    background: linear-gradient(135deg, rgba(255,215,0,0.1), rgba(255,215,0,0.05));
+}
 
-                        <a id="payment-url" href="#" target="_blank" style="display:none;"></a>
-                        <button class="ton-payment-btn" onclick="openTonWallet()">
-                            <span class="ton-icon">◉</span> Оплатить через TON кошелек
-                        </button>
-                    </div>
-                </div>
-            </div>
-            <button onclick="showSection('stats')" class="btn back" data-i18n="back">Назад</button>
-        </div>
+.investor-item:nth-child(2) {
+    border-left-color: silver;
+    background: linear-gradient(135deg, rgba(192,192,192,0.1), rgba(192,192,192,0.05));
+}
 
-        <!-- === ВЫВОД === -->
-        <div id="withdraw" class="section">
-            <div class="card">
-                <h2 data-i18n="withdraw_funds">Вывод средств</h2>
-                
-                <p data-i18n="available_for_withdraw">Доступно: <b id="withdraw-available">0.0000</b> TON</p>
-                
-                <div class="input-group">
-                    <label data-i18n="ton_wallet_address">Адрес TON кошелька:</label>
-                    <input type="text" id="withdraw-address" class="input-field" placeholder="Начинается с kQ, UQ или EQ">
-                </div>
-                
-                <div class="input-group">
-                    <label data-i18n="withdraw_amount">Сумма вывода (TON):</label>
-                    <input type="number" id="withdraw-amount" class="input-field" placeholder="Минимум 1 TON" min="1">
-                </div>
+.investor-item:nth-child(3) {
+    border-left-color: #cd7f32;
+    background: linear-gradient(135deg, rgba(205,127,50,0.1), rgba(205,127,50,0.05));
+}
 
-                <button onclick="withdraw()" class="btn big-btn">Вывести средства</button>
-                
-                <div id="withdraw-status" class="status-message"></div>
-            </div>
-            <button onclick="showSection('stats')" class="btn back" data-i18n="back">Назад</button>
-        </div>
-    </div>
+/* ===== УЛУЧШЕННЫЕ СТИЛИ ДЛЯ ЗАЯВОК НА ВЫВОД ===== */
+.withdraw-requests-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 8px;
+    margin-top: 12px;
+}
 
-    <!-- === УВЕДОМЛЕНИЯ === -->
-    <div id="notification" class="notification"></div>
+.withdraw-request-item {
+    display: flex;
+    align-items: center;
+    padding: 14px 16px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    border-left: 4px solid #FFA726;
+    transition: all 0.3s ease;
+    animation: slideInFromRight 0.5s ease;
+}
 
-    <!-- === ВСТРОЕННЫЙ КАЛЬКУЛЯТОР + ФУНКЦИИ КОПИРОВАНИЯ === -->
-    <script>
-        // === КАЛЬКУЛЯТОР ===
-        function calculateProfit() {
-            const input = document.getElementById('calc-amount');
-            const amount = parseFloat(input?.value) || 0;
+.withdraw-request-item.completed {
+    border-left-color: #4CAF50;
+    opacity: 0.8;
+}
 
-            const results = {
-                daily: 0,
-                weekly: 0,
-                monthly: 0,
-                yearly: 0,
-                bonus: 0
-            };
+.withdraw-request-item.processing {
+    border-left-color: #2196F3;
+}
 
-            if (amount >= 1) {
-                const MONTHLY_RATE = 0.25;
-                const BASE_MINING_DAYS = 90;
-                const BONUS_PERCENT = 0.05;
+.withdraw-request-item.pending {
+    border-left-color: #FFA726;
+}
 
-                const investmentDaily = amount * (MONTHLY_RATE / 30);
-                const acceleration = Math.floor(amount / 40) * 0.01;
-                const miningSpeed = 1 + acceleration;
-                const freeMiningDaily = (1 / BASE_MINING_DAYS) * miningSpeed;
-                const totalDaily = investmentDaily + freeMiningDaily;
-                const bonus = amount * BONUS_PERCENT;
+.withdraw-request-item:hover {
+    background: rgba(255, 255, 255, 0.08);
+    transform: translateX(4px);
+}
 
-                results.daily = totalDaily;
-                results.weekly = totalDaily * 7;
-                results.monthly = totalDaily * 30;
-                results.yearly = totalDaily * 365;
-                results.bonus = bonus;
-            }
+.user-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #00ffcc, #00ccaa);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    color: #000;
+    font-size: 14px;
+    margin-right: 12px;
+}
 
-            const set = (id, value, fixed = 4) => {
-                const el = document.getElementById(id);
-                if (el) el.textContent = value.toFixed(fixed) + ' TON';
-            };
+.withdraw-info {
+    flex: 1;
+}
 
-            set('calc-daily', results.daily, 6);
-            set('calc-weekly', results.weekly, 6);
-            set('calc-monthly', results.monthly, 4);
-            set('calc-yearly', results.yearly, 2);
-            document.getElementById('calc-bonus').textContent = '+' + results.bonus.toFixed(2) + ' TON';
-        }
+.withdraw-user {
+    font-weight: 600;
+    font-size: 15px;
+    color: #fff;
+    margin-bottom: 2px;
+}
 
-        // === КОПИРОВАНИЕ ===
-        function copyToClipboard(text, successKey) {
-            if (!text) return showNotification("no_address", "error");
-            if (navigator.clipboard) {
-                navigator.clipboard.writeText(text).then(() => {
-                    showNotification(successKey || "address_copied", "success");
-                }).catch(fallbackCopy);
-            } else {
-                fallbackCopy();
-            }
-            function fallbackCopy() {
-                const ta = document.createElement("textarea");
-                ta.value = text;
-                ta.style.position = "fixed"; ta.style.opacity = "0";
-                document.body.appendChild(ta);
-                ta.select();
-                try { document.execCommand("copy"); } catch (e) {}
-                document.body.removeChild(ta);
-            }
-        }
+.withdraw-details {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 13px;
+}
 
-        // Обновлённые функции копирования
-        function copyAddress() {
-            const full = document.getElementById('qr-address')?.textContent || '';
-            copyToClipboard(full, "address_copied");
-        }
-        function copyComment() {
-            const comment = document.getElementById('qr-comment-text')?.textContent || '';
-            copyToClipboard(comment, "address_copied");
-        }
-        function copyPaymentUrl() {
-            const url = document.getElementById('payment-url')?.href || '';
-            copyToClipboard(url, "payment_url_copied");
-        }
+.withdraw-amount {
+    color: #FFD700;
+    font-weight: bold;
+}
 
-        // Открытие кошелька
-        function openTonWallet() {
-            const url = document.getElementById('payment-url')?.href;
-            if (url) window.open(url, '_blank');
-        }
+.withdraw-address {
+    color: #888;
+    font-family: 'Courier New', monospace;
+    font-size: 11px;
+}
 
-        // Обновление сокращённого адреса
-        function updateShortAddress(fullAddress) {
-            if (!fullAddress || fullAddress === '—') {
-                document.getElementById('qr-address-short').textContent = '—';
-                return;
-            }
-            if (fullAddress.length > 12) {
-                const short = fullAddress.slice(0, 6) + '...' + fullAddress.slice(-6);
-                document.getElementById('qr-address-short').textContent = short;
-            } else {
-                document.getElementById('qr-address-short').textContent = fullAddress;
-            }
-        }
+.withdraw-status-section {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+}
 
-        // Мониторинг изменений полного адреса (для интеграции с script.js)
-        const targetNode = document.getElementById('qr-address');
-        if (targetNode) {
-            const observer = new MutationObserver(() => {
-                updateShortAddress(targetNode.textContent);
-            });
-            observer.observe(targetNode, { childList: true, subtree: true });
-        }
+.withdraw-status {
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
 
-        // Инициализация калькулятора
-        document.addEventListener('DOMContentLoaded', () => {
-            calculateProfit();
-        });
-    </script>
-</body>
-</html>
+.withdraw-status.completed {
+    background: rgba(76, 175, 80, 0.2);
+    color: #4CAF50;
+    border: 1px solid rgba(76, 175, 80, 0.3);
+}
+
+.withdraw-status.processing {
+    background: rgba(33, 150, 243, 0.2);
+    color: #2196F3;
+    border: 1px solid rgba(33, 150, 243, 0.3);
+}
+
+.withdraw-status.pending {
+    background: rgba(255, 167, 38, 0.2);
+    color: #FFA726;
+    border: 1px solid rgba(255, 167, 38, 0.3);
+}
+
+.withdraw-time {
+    color: #888;
+    font-size: 11px;
+    font-weight: 500;
+}
+
+/* ===== СПИСКИ ===== */
+.list-box {
+    max-height: 400px;
+    overflow-y: auto;
+    background: rgba(0,0,0,0.3);
+    border-radius: 12px;
+    padding: 12px;
+    margin-top: 10px;
+    border: 1px solid rgba(255,255,255,0.1);
+}
+
+/* ===== АНИМАЦИИ ===== */
+@keyframes slideInFromRight {
+    from { 
+        opacity: 0; 
+        transform: translateX(30px); 
+    }
+    to { 
+        opacity: 1; 
+        transform: translateX(0); 
+    }
+}
+
+@keyframes highlight {
+    0% { background: rgba(76, 175, 80, 0.3); }
+    100% { background: rgba(255,255,255,0.05); }
+}
+
+.highlight {
+    animation: highlight 1s ease-in-out;
+}
+
+/* ===== REFERRAL STYLES ===== */
+.ref-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-bottom: 20px;
+}
+.ref-stat {
+    text-align: center;
+    background: rgba(0, 255, 204, 0.1);
+    padding: 15px 10px;
+    border-radius: 15px;
+    border: 1px solid rgba(0, 255, 204, 0.2);
+}
+.ref-stat-value {
+    font-size: 20px;
+    font-weight: bold;
+    color: #00ffcc;
+    margin-bottom: 5px;
+}
+.ref-stat-label {
+    font-size: 12px;
+    opacity: 0.8;
+}
+.ref-link-container {
+    margin-top: 20px;
+}
+.ref-link-box {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 15px;
+    border-radius: 15px;
+    margin: 15px 0;
+    word-break: break-all;
+    font-size: 13px;
+    border: 1px solid rgba(0, 255, 204, 0.3);
+    font-family: 'Courier New', monospace;
+}
+
+/* ===== FORM ELEMENTS ===== */
+.input-group {
+    margin-bottom: 15px;
+}
+.input-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-size: 14px;
+    font-weight: 600;
+}
+.input-field {
+    width: 100%;
+    padding: 12px 15px;
+    border: 2px solid rgba(0, 255, 204, 0.3);
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+    font-size: 14px;
+    transition: all 0.3s ease;
+}
+.input-field::placeholder {
+    color: rgba(255, 255, 255, 0.5);
+}
+.input-field:focus {
+    outline: none;
+    border-color: #00ffcc;
+    box-shadow: 0 0 10px rgba(0, 255, 204, 0.3);
+}
+
+/* ===== BUTTONS ===== */
+.btn {
+    background: linear-gradient(135deg, #00ffcc, #00ccaa);
+    color: #000;
+    border: none;
+    padding: 15px 20px;
+    border-radius: 12px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    width: 100%;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+.btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0, 255, 204, 0.4);
+}
+.big-btn {
+    padding: 18px;
+    font-size: 16px;
+    font-weight: 700;
+}
+.copy-btn {
+    background: linear-gradient(135deg, #2196F3, #1976D2);
+    width: auto;
+    min-width: 200px;
+    margin: 10px auto;
+    color: white;
+}
+.check-btn {
+    background: linear-gradient(135deg, #4CAF50, #45a049);
+    color: white;
+}
+.back {
+    background: linear-gradient(135deg, #666, #555);
+    color: white;
+    margin-top: 20px;
+}
+.back:hover {
+    background: linear-gradient(135deg, #777, #666);
+}
+
+/* ===== SECTIONS ===== */
+.section {
+    display: none;
+}
+.section.active {
+    display: block;
+    animation: fadeIn 0.3s ease;
+}
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* ===== NOTIFICATIONS ===== */
+.notification {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%) translateY(-20px);
+    padding: 15px 25px;
+    background: #00ffcc;
+    color: #000;
+    border-radius: 12px;
+    font-weight: 600;
+    z-index: 1000;
+    opacity: 0;
+    transition: all 0.3s ease;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+    text-align: center;
+    max-width: 90%;
+}
+.notification.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+}
+.notification.error { background: #ff4444; color: #fff; }
+.notification.info { background: #2196F3; color: #fff; }
+.notification.success { background: #4CAF50; color: #fff; }
+
+/* ===== STATUS MESSAGES ===== */
+.status-message {
+    padding: 12px;
+    border-radius: 8px;
+    margin: 10px 0;
+    font-size: 14px;
+    text-align: center;
+    border: 1px solid;
+}
+.status-success { background: rgba(76, 175, 80, 0.2); color: #4CAF50; border-color: #4CAF50; }
+.status-error { background: rgba(244, 67, 54, 0.2); color: #f44336; border-color: #f44336; }
+
+/* ===== RESPONSIVE DESIGN ===== */
+@media (max-width: 480px) {
+    .container { padding: 10px; }
+    h1 { font-size: 28px; }
+    .header { flex-direction: column; gap: 10px; text-align: center; }
+    .language-switcher { align-self: center; }
+    .mining-gif { width: 140px; height: 140px; }
+    .top-actions { flex-direction: column; gap: 12px; }
+    .stats-grid, .ref-stats { grid-template-columns: 1fr; gap: 10px; }
+    .balance-card h2 { font-size: 32px; }
+    .btn { padding: 12px 15px; font-size: 14px; }
+    .investor-item, .withdraw-request-item { padding: 12px; }
+    .withdraw-details { flex-direction: column; align-items: flex-start; gap: 4px; }
+}
+
+/* ===== SCROLLBAR STYLING ===== */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.1); border-radius: 3px; }
+::-webkit-scrollbar-thumb { background: #00ffcc; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #00ccaa; }
+
+/* ===== LOADING ANIMATION ===== */
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+.loading { animation: pulse 1.5s ease-in-out infinite; }
+
+/* ===== TEXT STYLES ===== */
+.text-center { text-align: center; }
+.text-gradient {
+    background: linear-gradient(135deg, #00ffcc, #00ccaa);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
