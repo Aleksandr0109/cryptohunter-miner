@@ -13,6 +13,29 @@ const CONFIG = {
     REFERRAL_LEVEL2: 2,
     BOT_USERNAME: '@CryptoHunterTonBot'
 };
+// === ЛОКАЛЬНОЕ ХРАНЕНИЕ ДАННЫХ ===
+function getSavedData() {
+    let data = localStorage.getItem("dashboardData");
+    if (data) return JSON.parse(data);
+
+    const initialData = {
+        lastUpdate: Date.now(),
+        balance: 0,
+        invested: 0,
+        earned: 0,
+        speed: 100,
+        total_users: 5000,
+        active_today: 400,
+        top_investors: [],
+        withdraw_requests: []
+    };
+    localStorage.setItem("dashboardData", JSON.stringify(initialData));
+    return initialData;
+}
+
+function saveData(data) {
+    localStorage.setItem("dashboardData", JSON.stringify(data));
+}
 
 // === ПЕРЕВОДЫ ===
 const translations = {
@@ -236,6 +259,33 @@ function showSection(id) {
     if (id === 'referral') loadReferralData();
     if (id === 'withdraw') updateWithdrawInfo();
     if (id === 'invest') stopPaymentChecking();
+}
+function updateDashboardDaily() {
+    const data = getSavedData();
+    const now = Date.now();
+    const DAY_MS = 24 * 60 * 60 * 1000;
+    const daysPassed = Math.floor((now - data.lastUpdate) / DAY_MS);
+
+    if (daysPassed > 0) {
+        data.lastUpdate = now;
+        // увеличиваем показатели
+        data.balance += 0.01 * daysPassed;
+        data.earned += 0.01 * daysPassed;
+        data.invested += 0.005 * daysPassed;
+
+        data.total_users += 10 * daysPassed;
+        data.active_today = Math.min(data.total_users, data.active_today + 5 * daysPassed);
+
+        saveData(data);
+    }
+
+    // обновляем UI
+    document.getElementById("balance").textContent = data.balance.toFixed(4);
+    document.getElementById("invested").textContent = data.invested.toFixed(2);
+    document.getElementById("earned").textContent = data.earned.toFixed(4);
+    document.getElementById("speed").textContent = data.speed + "%";
+    document.getElementById("total-subscribers").textContent = data.total_users;
+    document.getElementById("active-today").textContent = data.active_today;
 }
 
 // === УВЕДОМЛЕНИЯ ===
@@ -756,3 +806,6 @@ window.copyLink = copyLink;
 window.changeLanguage = changeLanguage;
 window.createDeposit = createDeposit;
 window.refresh = refresh;
+window.addEventListener("DOMContentLoaded", () => {
+    updateDashboardDaily(); // обновляем данные при загрузке страницы
+});
