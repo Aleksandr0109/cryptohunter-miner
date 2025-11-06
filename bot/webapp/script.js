@@ -653,6 +653,98 @@ document.addEventListener('DOMContentLoaded', () => {
     const refreshBtn = document.getElementById('refresh-btn');
     if (refreshBtn) refreshBtn.addEventListener('click', refresh);
 });
+// === Генерация динамической статистики ===
+
+// Получаем сохранённые значения из localStorage
+let statsData = JSON.parse(localStorage.getItem("cryptoStats")) || {
+    totalSubscribers: 113123,
+    activeToday: 1247,
+    lastUpdated: new Date().toDateString(),
+    topInvestors: [],
+    withdrawRequests: []
+};
+
+// Проверяем, новый ли день
+const today = new Date().toDateString();
+if (statsData.lastUpdated !== today) {
+    // Увеличиваем показатели каждый день случайно в пределах диапазона
+    statsData.totalSubscribers += Math.floor(Math.random() * 400 + 200); // +200..600
+    statsData.activeToday = Math.floor(Math.random() * 2000 + 800); // 800..2800
+
+    // Генерируем новый топ инвесторов
+    statsData.topInvestors = generateTopInvestors();
+
+    // Генерируем заявки на вывод
+    statsData.withdrawRequests = generateWithdrawRequests();
+
+    statsData.lastUpdated = today;
+    localStorage.setItem("cryptoStats", JSON.stringify(statsData));
+}
+
+// === Отображаем всё на странице ===
+document.getElementById("total-subscribers").textContent = statsData.totalSubscribers.toLocaleString();
+document.getElementById("active-today").textContent = `+${statsData.activeToday.toLocaleString()}`;
+renderTopInvestors(statsData.topInvestors);
+renderWithdrawRequests(statsData.withdrawRequests);
+
+// === Функции генерации ===
+
+function generateTopInvestors() {
+    const names = [
+        "CryptoWolf", "TONHunter", "BlockShark", "SatoshiX",
+        "Moonrider", "Tonik", "WhaleMan", "CryptoGirl", "MinerX", "CoinNinja",
+        "BitPilot", "TonLord", "RocketMan", "ChainQueen"
+    ];
+
+    // случайно выбираем 10 имён
+    const shuffled = names.sort(() => 0.5 - Math.random());
+    const top10 = shuffled.slice(0, 10);
+
+    // первые 3-4 — крупные инвесторы
+    return top10.map((name, i) => {
+        let amount;
+        if (i < 3) amount = (Math.random() * 9000 + 10000).toFixed(2); // 10k–19k
+        else amount = (Math.random() * 7000 + 1000).toFixed(2); // 1k–8k
+        return { name, amount };
+    });
+}
+
+function generateWithdrawRequests() {
+    const names = ["Andrey", "Oleg", "Ivan", "Maks", "Pavel", "Anna", "Kira", "Vlad", "Denis", "Dima"];
+    const requests = [];
+    const count = Math.floor(Math.random() * 5 + 5); // 5–10 заявок
+
+    for (let i = 0; i < count; i++) {
+        const name = names[Math.floor(Math.random() * names.length)];
+        const amount = (Math.random() * 200 + 20).toFixed(2); // 20–220 TON
+        requests.push({ name, amount });
+    }
+    return requests;
+}
+
+// === Отрисовка ===
+
+function renderTopInvestors(list) {
+    const container = document.getElementById("top-investors-list");
+    container.innerHTML = "";
+    list.forEach((inv, i) => {
+        const div = document.createElement("div");
+        div.className = "investor-row";
+        div.innerHTML = `<b>#${i + 1}</b> ${inv.name} — <span>${inv.amount} TON</span>`;
+        container.appendChild(div);
+    });
+}
+
+function renderWithdrawRequests(list) {
+    const container = document.getElementById("withdraw-requests-list");
+    container.innerHTML = "";
+    list.forEach(req => {
+        const div = document.createElement("div");
+        div.className = "withdraw-row";
+        div.innerHTML = `${req.name} — <span>${req.amount} TON</span>`;
+        container.appendChild(div);
+    });
+}
 
 // === ГЛОБАЛЬНЫЕ ФУНКЦИИ ===
 window.showSection = showSection;
