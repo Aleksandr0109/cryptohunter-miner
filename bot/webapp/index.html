@@ -9,7 +9,7 @@
 </head>
 <body>
     <div class="container">
-        <!-- ЗАГОЛОВОК -->
+        <!-- === ЗАГОЛОВОК === -->
         <div class="header">
             <h1>CryptoHunter</h1>
             <div class="language-switcher">
@@ -18,7 +18,7 @@
             </div>
         </div>
 
-        <!-- ГЛАВНЫЙ ЭКРАН -->
+        <!-- === ГЛАВНЫЙ ЭКРАН === -->
         <div id="stats" class="section active">
             <img src="/webapp/assets/mining.gif" alt="Mining" class="mining-gif">
 
@@ -40,18 +40,9 @@
             </div>
 
             <div class="stats-grid">
-                <div class="stat">
-                    <p data-i18n="invested">Инвестировано</p>
-                    <b id="invested">0.00</b>
-                </div>
-                <div class="stat">
-                    <p data-i18n="earned">Заработано</p>
-                    <b id="earned">0.0000</b>
-                </div>
-                <div class="stat">
-                    <p data-i18n="speed">Скорость</p>
-                    <b id="speed">100%</b>
-                </div>
+                <div class="stat"><p data-i18n="invested">Инвестировано</p><b id="invested">0.00</b></div>
+                <div class="stat"><p data-i18n="earned">Заработано</p><b id="earned">0.0000</b></div>
+                <div class="stat"><p data-i18n="speed">Скорость</p><b id="speed">100%</b></div>
             </div>
 
             <div class="nav-buttons">
@@ -70,25 +61,23 @@
             </button>
         </div>
 
-        <!-- ДЕТАЛЬНАЯ СТАТИСТИКА -->
+        <!-- === ДЕТАЛЬНАЯ СТАТИСТИКА === -->
         <div id="dashboard" class="section">
             <div class="card">
                 <h2 data-i18n="detailed_stats">Детальная статистика</h2>
 
-                <!-- СООБЩЕСТВО -->
                 <div class="stats-section">
                     <h3 data-i18n="community">СООБЩЕСТВО</h3>
                     <div class="stat-row">
                         <span data-i18n="total_subscribers">Всего подписчиков:</span>
-                        <b id="community-total">0</b>
+                        <b id="total-subscribers">0</b>
                     </div>
                     <div class="stat-row">
                         <span data-i18n="active_today">Активных сегодня:</span>
-                        <b id="community-active">0</b>
+                        <b id="active-today">0</b>
                     </div>
                 </div>
 
-                <!-- ИНВЕСТИЦИИ -->
                 <div class="stats-section">
                     <h3 data-i18n="investments">ИНВЕСТИЦИИ</h3>
                     <div class="stat-row"><span data-i18n="amount">Сумма:</span><b id="dash-invested">0.00 TON</b></div>
@@ -97,7 +86,6 @@
                     <div class="stat-row"><span data-i18n="month">Месяц:</span><b id="dash-monthly-inv">0.00 TON</b></div>
                 </div>
 
-                <!-- БЕСПЛАТНЫЙ МАЙНИНГ -->
                 <div class="stats-section">
                     <h3 data-i18n="free_mining">БЕСПЛАТНЫЙ МАЙНИНГ</h3>
                     <div class="stat-row"><span data-i18n="speed">Скорость:</span><b id="dash-speed">100%</b></div>
@@ -106,30 +94,24 @@
                     <div class="stat-row"><span data-i18n="accumulated">Накоплено:</span><b id="dash-accumulated">0.00 TON</b></div>
                 </div>
 
-                <!-- СЕЙЧАС НАЧИСЛЯЕТСЯ -->
                 <div class="stats-section">
                     <h3 data-i18n="currently_earning">СЕЙЧАС НАЧИСЛЯЕТСЯ</h3>
                     <div class="stat-row"><span data-i18n="per_day">В день:</span><b id="dash-total-daily">0.0000 TON</b></div>
                     <div class="stat-row"><span data-i18n="per_hour">В час:</span><b id="dash-hourly">0.0000 TON</b></div>
                 </div>
 
-                <!-- ✅ ТОП ИНВЕСТОРЫ -->
+                <!-- ✅ ТОП 10 ИНВЕСТОРОВ -->
                 <div class="stats-section">
                     <h3 data-i18n="top_investors">ТОП 10 ИНВЕСТОРОВ</h3>
-                    <div id="top-investors-list" class="list-box">
-                        <div class="empty-placeholder" data-i18n="no_data">Загрузка...</div>
-                    </div>
+                    <div id="top-investors-list" class="list-box"></div>
                 </div>
 
                 <!-- ✅ ЗАЯВКИ НА ВЫВОД -->
                 <div class="stats-section">
                     <h3 data-i18n="withdraw_requests">ЗАЯВКИ НА ВЫВОД</h3>
-                    <div id="withdraw-requests-list" class="list-box">
-                        <div class="empty-placeholder" data-i18n="no_data">Загрузка...</div>
-                    </div>
+                    <div id="withdraw-requests-list" class="list-box"></div>
                 </div>
 
-                <!-- ВЫВОД -->
                 <div class="stats-section">
                     <h3>Вывод</h3>
                     <div class="stat-row"><span id="dash-withdraw-status">- <span data-i18n="not_ready">Не готово</span></span></div>
@@ -139,7 +121,7 @@
             <button onclick="showSection('stats')" class="btn back" data-i18n="back">Назад</button>
         </div>
 
-        <!-- РЕФЕРАЛЫ -->
+        <!-- === РЕФЕРАЛЫ === -->
         <div id="referral" class="section">
             <div class="card">
                 <h2 data-i18n="referral_program">Реферальная программа</h2>
@@ -157,7 +139,7 @@
             <button onclick="showSection('stats')" class="btn back" data-i18n="back">Назад</button>
         </div>
 
-        <!-- ИНВЕСТ -->
+        <!-- === ИНВЕСТ === -->
         <div id="invest" class="section">
             <div class="card">
                 <h2 data-i18n="investing">Инвестирование</h2>
@@ -178,7 +160,7 @@
             <button onclick="showSection('stats')" class="btn back" data-i18n="back">Назад</button>
         </div>
 
-        <!-- ВЫВОД -->
+        <!-- === ВЫВОД === -->
         <div id="withdraw" class="section">
             <div class="card">
                 <h2 data-i18n="withdraw_funds">Вывод средств</h2>
@@ -198,7 +180,7 @@
         </div>
     </div>
 
-    <!-- УВЕДОМЛЕНИЯ -->
+    <!-- === УВЕДОМЛЕНИЯ === -->
     <div id="notification" class="notification"></div>
 </body>
 </html>
