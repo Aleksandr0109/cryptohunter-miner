@@ -1,1217 +1,1573 @@
-/* ===== BASE STYLES ===== */
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-}
-
-body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
-    color: #fff;
-    min-height: 100vh;
-    line-height: 1.6;
-    overflow-x: hidden;
-}
-
-.container {
-    max-width: 450px;
-    margin: 0 auto;
-    padding: 20px;
-}
-
-/* ===== HEADER ===== */
-.header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 25px;
-    position: relative;
-}
-
-h1 {
-    font-size: 32px;
-    margin: 12px 0 8px;
-    background: linear-gradient(135deg, #00ffcc, #00ccaa);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    text-align: center;
-    font-weight: 900;
-    flex: 1;
-    text-shadow: 0 0 20px rgba(0, 255, 204, 0.3);
-}
-
-/* ===== LANGUAGE SWITCHER ===== */
-.language-switcher {
-    display: flex;
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 20px;
-    padding: 4px;
-    gap: 4px;
-    border: 1px solid rgba(0, 255, 204, 0.3);
-    backdrop-filter: blur(10px);
-}
-
-.lang-btn {
-    background: transparent;
-    border: none;
-    color: #fff;
-    padding: 6px 12px;
-    border-radius: 16px;
-    cursor: pointer;
-    font-size: 12px;
-    font-weight: 600;
-    transition: all 0.3s ease;
-    min-width: 40px;
-}
-
-.lang-btn.active {
-    background: #00ffcc;
-    color: #0f0c29;
-    box-shadow: 0 0 10px rgba(0, 255, 204, 0.5);
-}
-
-.lang-btn:hover:not(.active) {
-    background: rgba(255, 255, 255, 0.1);
-    transform: scale(1.05);
-}
-
-/* ===== MINING GIF ===== */
-.mining-gif {
-    width: 180px;
-    height: 180px;
-    margin: 18px auto;
-    border-radius: 50%;
-    box-shadow: 
-        0 0 40px rgba(0, 255, 204, 0.6),
-        inset 0 0 20px rgba(0, 255, 204, 0.2);
-    display: block;
-    object-fit: cover;
-    border: 3px solid rgba(0, 255, 204, 0.3);
-    animation: pulse 2s ease-in-out infinite alternate;
-}
-
-@keyframes pulse {
-    0% {
-        box-shadow: 
-            0 0 40px rgba(0, 255, 204, 0.6),
-            inset 0 0 20px rgba(0, 255, 204, 0.2);
-    }
-    100% {
-        box-shadow: 
-            0 0 60px rgba(0, 255, 204, 0.8),
-            inset 0 0 30px rgba(0, 255, 204, 0.3);
-    }
-}
-
-/* ===== TOP ACTIONS ===== */
-.top-actions {
-    display: flex;
-    gap: 16px;
-    margin: 22px 0 28px;
-    justify-content: center;
-}
-
-.action-btn {
-    flex: 1;
-    background: rgba(0, 255, 204, 0.18);
-    border: 2.5px solid #00ffcc;
-    border-radius: 20px;
-    padding: 18px 12px;
-    color: #fff;
-    font-weight: 800;
-    font-size: 15px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 8px;
-    transition: all 0.35s ease;
-    cursor: pointer;
-    backdrop-filter: blur(10px);
-    position: relative;
-    overflow: hidden;
-}
-
-.action-btn::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
-    transition: left 0.5s;
-}
-
-.action-btn:hover::before {
-    left: 100%;
-}
-
-.action-btn:hover {
-    background: rgba(0, 255, 204, 0.35);
-    transform: translateY(-5px);
-    box-shadow: 0 10px 25px rgba(0, 255, 204, 0.3);
-}
-
-.action-btn img {
-    transition: transform 0.3s ease;
-}
-
-.action-btn:hover img {
-    transform: scale(1.1);
-}
-
-/* ===== BALANCE CARD ===== */
-.balance-card {
-    background: linear-gradient(135deg, rgba(0,255,204,0.15), rgba(0,255,204,0.05));
-    border: 2.5px solid #00ffcc;
-    border-radius: 24px;
-    padding: 22px;
-    margin: 25px 0;
-    text-align: center;
-    backdrop-filter: blur(10px);
-    position: relative;
-    overflow: hidden;
-}
-
-.balance-card::before {
-    content: '';
-    position: absolute;
-    top: -50%;
-    left: -50%;
-    width: 200%;
-    height: 200%;
-    background: radial-gradient(circle, rgba(0,255,204,0.1) 0%, transparent 70%);
-    animation: rotate 10s linear infinite;
-}
-
-@keyframes rotate {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-}
-
-.balance-card h2 {
-    font-size: 42px;
-    color: #00ffcc;
-    font-weight: 900;
-    margin: 10px 0;
-    text-shadow: 0 0 10px rgba(0, 255, 204, 0.5);
-    position: relative;
-}
-
-.balance-card p:first-child {
-    font-size: 14px;
-    opacity: 0.8;
-    font-weight: 600;
-    position: relative;
-}
-
-.balance-card p:last-child {
-    font-size: 16px;
-    font-weight: 700;
-    color: #fff;
-    position: relative;
-}
-
-/* ===== STATS GRID ===== */
-.stats-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 14px;
-    margin: 28px 0;
-}
-
-.stat {
-    background: rgba(255, 255, 255, 0.09);
-    padding: 16px 10px;
-    border-radius: 18px;
-    text-align: center;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(10px);
-    transition: all 0.3s ease;
-    position: relative;
-    overflow: hidden;
-}
-
-.stat::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 2px;
-    background: linear-gradient(90deg, transparent, #00ffcc, transparent);
-    transform: scaleX(0);
-    transition: transform 0.3s ease;
-}
-
-.stat:hover::before {
-    transform: scaleX(1);
-}
-
-.stat:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
-    border-color: rgba(0, 255, 204, 0.3);
-}
-
-.stat b {
-    display: block;
-    font-size: 19px;
-    color: #00ffcc;
-    font-weight: 800;
-    margin-top: 5px;
-}
-
-.stat p {
-    font-size: 12px;
-    opacity: 0.8;
-    font-weight: 600;
-}
-
-/* ===== NAV BUTTONS ===== */
-.nav-buttons {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 14px;
-    margin: 32px 0 20px;
-}
-
-.nav-btn {
-    background: linear-gradient(135deg, #00ffcc, #00ccaa);
-    color: #000;
-    border: none;
-    padding: 16px;
-    border-radius: 18px;
-    font-weight: 800;
-    font-size: 15px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    transition: all 0.3s ease;
-    position: relative;
-    overflow: hidden;
-}
-
-.nav-btn::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
-    transition: left 0.5s;
-}
-
-.nav-btn:hover::before {
-    left: 100%;
-}
-
-.nav-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(0, 255, 204, 0.4);
-}
-
-.nav-btn img {
-    transition: transform 0.3s ease;
-}
-
-.nav-btn:hover img {
-    transform: scale(1.1);
-}
-
-/* ===== CARDS ===== */
-.card {
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 20px;
-    padding: 20px;
-    margin-bottom: 20px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(10px);
-    position: relative;
-    overflow: hidden;
-}
-
-.card::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 1px;
-    background: linear-gradient(90deg, transparent, #00ffcc, transparent);
-}
-
-.card h2 {
-    font-size: 18px;
-    margin-bottom: 15px;
-    color: #00ffcc;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    position: relative;
-}
-
-/* ===== DASHBOARD STYLES ===== */
-.stats-section {
-    margin-bottom: 20px;
-    padding-bottom: 15px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    position: relative;
-}
-
-.stats-section h3 {
-    font-size: 16px;
-    margin-bottom: 12px;
-    color: #00ffcc;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.stats-section:last-child {
-    border-bottom: none;
-}
-
-.stat-row {
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 8px;
-    font-size: 14px;
-    align-items: center;
-    padding: 8px 0;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-    transition: background 0.3s ease;
-}
-
-.stat-row:hover {
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 8px;
-    padding: 8px;
-}
-
-.stat-row:last-child {
-    margin-bottom: 0;
-    border-bottom: none;
-}
-
-/* ===== УЛУЧШЕННЫЕ СТИЛИ ДЛЯ ТОП ИНВЕСТОРОВ ===== */
-.top-investors-grid {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 8px;
-    margin-top: 12px;
-}
-
-.investor-item {
-    display: flex;
-    align-items: center;
-    padding: 14px 16px;
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 12px;
-    border-left: 4px solid #00ffcc;
-    transition: all 0.3s ease;
-    animation: slideInFromRight 0.5s ease;
-    position: relative;
-    overflow: hidden;
-}
-
-.investor-item::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
-    transition: left 0.5s;
-}
-
-.investor-item:hover::before {
-    left: 100%;
-}
-
-.investor-item:hover {
-    background: rgba(255, 255, 255, 0.08);
-    transform: translateX(4px);
-}
-
-.investor-rank {
-    font-weight: bold;
-    color: #00ffcc;
-    min-width: 40px;
-    font-size: 16px;
-    text-align: center;
-    position: relative;
-}
-
-.investor-info {
-    flex: 1;
-    margin: 0 15px;
-    position: relative;
-}
-
-.investor-name {
-    font-weight: 600;
-    font-size: 15px;
-    color: #fff;
-    margin-bottom: 4px;
-}
-
-.investor-amount {
-    font-weight: bold;
-    font-size: 16px;
-    color: #FFD700;
-}
-
-.investor-change {
-    font-size: 12px;
-    padding: 4px 8px;
-    border-radius: 6px;
-    font-weight: bold;
-    min-width: 60px;
-    text-align: center;
-    position: relative;
-}
-
-.investor-change.positive {
-    background: rgba(76, 175, 80, 0.2);
-    color: #4CAF50;
-    border: 1px solid rgba(76, 175, 80, 0.3);
-}
-
-.investor-change.negative {
-    background: rgba(244, 67, 54, 0.2);
-    color: #F44336;
-    border: 1px solid rgba(244, 67, 54, 0.3);
-}
-
-/* Цвета для топ-3 */
-.investor-item:nth-child(1) {
-    border-left-color: gold;
-    background: linear-gradient(135deg, rgba(255,215,0,0.1), rgba(255,215,0,0.05));
-}
-
-.investor-item:nth-child(2) {
-    border-left-color: silver;
-    background: linear-gradient(135deg, rgba(192,192,192,0.1), rgba(192,192,192,0.05));
-}
-
-.investor-item:nth-child(3) {
-    border-left-color: #cd7f32;
-    background: linear-gradient(135deg, rgba(205,127,50,0.1), rgba(205,127,50,0.05));
-}
-
-/* ===== УЛУЧШЕННЫЕ СТИЛИ ДЛЯ ЗАЯВОК НА ВЫВОД ===== */
-.withdraw-requests-grid {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 8px;
-    margin-top: 12px;
-}
-
-.withdraw-request-item {
-    display: flex;
-    align-items: center;
-    padding: 14px 16px;
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 12px;
-    border-left: 4px solid #FFA726;
-    transition: all 0.3s ease;
-    animation: slideInFromRight 0.5s ease;
-    position: relative;
-    overflow: hidden;
-}
-
-.withdraw-request-item::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
-    transition: left 0.5s;
-}
-
-.withdraw-request-item:hover::before {
-    left: 100%;
-}
-
-.withdraw-request-item.completed {
-    border-left-color: #4CAF50;
-    opacity: 0.8;
-}
-
-.withdraw-request-item.processing {
-    border-left-color: #2196F3;
-}
-
-.withdraw-request-item.pending {
-    border-left-color: #FFA726;
-}
-
-.withdraw-request-item:hover {
-    background: rgba(255, 255, 255, 0.08);
-    transform: translateX(4px);
-}
-
-.user-avatar {
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, #00ffcc, #00ccaa);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: bold;
-    color: #000;
-    font-size: 14px;
-    margin-right: 12px;
-    position: relative;
-}
-
-.withdraw-info {
-    flex: 1;
-    position: relative;
-}
-
-.withdraw-user {
-    font-weight: 600;
-    font-size: 15px;
-    color: #fff;
-    margin-bottom: 2px;
-}
-
-.withdraw-details {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    font-size: 13px;
-}
-
-.withdraw-amount {
-    color: #FFD700;
-    font-weight: bold;
-}
-
-.withdraw-address {
-    color: #888;
-    font-family: 'Courier New', monospace;
-    font-size: 11px;
-}
-
-.withdraw-status-section {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 4px;
-    position: relative;
-}
-
-.withdraw-status {
-    padding: 6px 12px;
-    border-radius: 20px;
-    font-size: 11px;
-    font-weight: bold;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    position: relative;
-}
-
-.withdraw-status.completed {
-    background: rgba(76, 175, 80, 0.2);
-    color: #4CAF50;
-    border: 1px solid rgba(76, 175, 80, 0.3);
-}
-
-.withdraw-status.processing {
-    background: rgba(33, 150, 243, 0.2);
-    color: #2196F3;
-    border: 1px solid rgba(33, 150, 243, 0.3);
-}
-
-.withdraw-status.pending {
-    background: rgba(255, 167, 38, 0.2);
-    color: #FFA726;
-    border: 1px solid rgba(255, 167, 38, 0.3);
-}
-
-.withdraw-time {
-    color: #888;
-    font-size: 11px;
-    font-weight: 500;
-}
-
-/* ===== СПИСКИ ===== */
-.list-box {
-    max-height: 400px;
-    overflow-y: auto;
-    background: rgba(0,0,0,0.3);
-    border-radius: 12px;
-    padding: 12px;
-    margin-top: 10px;
-    border: 1px solid rgba(255,255,255,0.1);
-    position: relative;
-}
-
-/* ===== АНИМАЦИИ ===== */
-@keyframes slideInFromRight {
-    from { 
-        opacity: 0; 
-        transform: translateX(30px); 
-    }
-    to { 
-        opacity: 1; 
-        transform: translateX(0); 
-    }
-}
-
-@keyframes highlight {
-    0% { background: rgba(76, 175, 80, 0.3); }
-    100% { background: rgba(255,255,255,0.05); }
-}
-
-.highlight {
-    animation: highlight 1s ease-in-out;
-}
-
-/* ===== REFERRAL STYLES ===== */
-.ref-stats {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 12px;
-    margin-bottom: 20px;
-}
-
-.ref-stat {
-    text-align: center;
-    background: rgba(0, 255, 204, 0.1);
-    padding: 15px 10px;
-    border-radius: 15px;
-    border: 1px solid rgba(0, 255, 204, 0.2);
-    backdrop-filter: blur(10px);
-    transition: all 0.3s ease;
-    position: relative;
-    overflow: hidden;
-}
-
-.ref-stat:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 5px 15px rgba(0, 255, 204, 0.2);
-    border-color: rgba(0, 255, 204, 0.4);
-}
-
-.ref-stat-value {
-    font-size: 20px;
-    font-weight: bold;
-    color: #00ffcc;
-    margin-bottom: 5px;
-    position: relative;
-}
-
-.ref-stat-label {
-    font-size: 12px;
-    opacity: 0.8;
-    position: relative;
-}
-
-.ref-link-container {
-    margin-top: 20px;
-    position: relative;
-}
-
-.ref-link-box {
-    background: rgba(255, 255, 255, 0.1);
-    padding: 15px;
-    border-radius: 15px;
-    margin: 15px 0;
-    word-break: break-all;
-    font-size: 13px;
-    border: 1px solid rgba(0, 255, 204, 0.3);
-    font-family: 'Courier New', monospace;
-    position: relative;
-    backdrop-filter: blur(10px);
-}
-
-/* ===== FORM ELEMENTS ===== */
-.input-group {
-    margin-bottom: 15px;
-    position: relative;
-}
-
-.input-group label {
-    display: block;
-    margin-bottom: 8px;
-    font-size: 14px;
-    font-weight: 600;
-    position: relative;
-}
-
-.input-field {
-    width: 100%;
-    padding: 12px 15px;
-    border: 2px solid rgba(0, 255, 204, 0.3);
-    border-radius: 12px;
-    background: rgba(255, 255, 255, 0.1);
-    color: #fff;
-    font-size: 14px;
-    transition: all 0.3s ease;
-    backdrop-filter: blur(10px);
-    position: relative;
-}
-
-.input-field::placeholder {
-    color: rgba(255, 255, 255, 0.5);
-}
-
-.input-field:focus {
-    outline: none;
-    border-color: #00ffcc;
-    box-shadow: 0 0 10px rgba(0, 255, 204, 0.3);
-    background: rgba(255, 255, 255, 0.15);
-}
-
-/* ===== BUTTONS ===== */
-.btn {
-    background: linear-gradient(135deg, #00ffcc, #00ccaa);
-    color: #000;
-    border: none;
-    padding: 15px 20px;
-    border-radius: 12px;
-    cursor: pointer;
-    font-weight: 600;
-    transition: all 0.3s ease;
-    width: 100%;
-    margin-bottom: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    position: relative;
-    overflow: hidden;
-}
-
-.btn::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
-    transition: left 0.5s;
-}
-
-.btn:hover::before {
-    left: 100%;
-}
-
-.btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(0, 255, 204, 0.4);
-}
-
-.big-btn {
-    padding: 18px;
-    font-size: 16px;
-    font-weight: 700;
-}
-
-.copy-btn {
-    background: linear-gradient(135deg, #2196F3, #1976D2);
-    width: auto;
-    min-width: 200px;
-    margin: 10px auto;
-    color: white;
-}
-
-.check-btn {
-    background: linear-gradient(135deg, #4CAF50, #45a049);
-    color: white;
-}
-
-.back {
-    background: linear-gradient(135deg, #666, #555);
-    color: white;
-    margin-top: 20px;
-}
-
-.back:hover {
-    background: linear-gradient(135deg, #777, #666);
-}
-
-/* ===== SECTIONS ===== */
-.section {
-    display: none;
-    animation: fadeOut 0.3s ease;
-}
-
-.section.active {
-    display: block;
-    animation: fadeIn 0.3s ease;
-}
-
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
-@keyframes fadeOut {
-    from { opacity: 1; transform: translateY(0); }
-    to { opacity: 0; transform: translateY(-10px); }
-}
-
-/* ===== NOTIFICATIONS ===== */
-.notification {
-    position: fixed;
-    top: 20px;
-    left: 50%;
-    transform: translateX(-50%) translateY(-20px);
-    padding: 15px 25px;
-    background: #00ffcc;
-    color: #000;
-    border-radius: 12px;
-    font-weight: 600;
-    z-index: 1000;
-    opacity: 0;
-    transition: all 0.3s ease;
-    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
-    text-align: center;
-    max-width: 90%;
-    backdrop-filter: blur(10px);
-}
-
-.notification.show {
-    opacity: 1;
-    transform: translateX(-50%) translateY(0);
-}
-
-.notification.error { 
-    background: #ff4444; 
-    color: #fff; 
-}
-
-.notification.info { 
-    background: #2196F3; 
-    color: #fff; 
-}
-
-.notification.success { 
-    background: #4CAF50; 
-    color: #fff; 
-}
-
-/* ===== STATUS MESSAGES ===== */
-.status-message {
-    padding: 12px;
-    border-radius: 8px;
-    margin: 10px 0;
-    font-size: 14px;
-    text-align: center;
-    border: 1px solid;
-    backdrop-filter: blur(10px);
-    position: relative;
-}
-
-.status-success { 
-    background: rgba(76, 175, 80, 0.2); 
-    color: #4CAF50; 
-    border-color: #4CAF50; 
-}
-
-.status-error { 
-    background: rgba(244, 67, 54, 0.2); 
-    color: #f44336; 
-    border-color: #f44336; 
-}
-
-/* ===== RESPONSIVE DESIGN ===== */
-@media (max-width: 480px) {
-    .container { 
-        padding: 15px; 
-    }
-    
-    h1 { 
-        font-size: 28px; 
-    }
-    
-    .header { 
-        flex-direction: column; 
-        gap: 10px; 
-        text-align: center; 
-    }
-    
-    .language-switcher { 
-        align-self: center; 
-    }
-    
-    .mining-gif { 
-        width: 140px; 
-        height: 140px; 
-    }
-    
-    .top-actions { 
-        flex-direction: column; 
-        gap: 12px; 
-    }
-    
-    .stats-grid, .ref-stats { 
-        grid-template-columns: 1fr; 
-        gap: 10px; 
-    }
-    
-    .balance-card h2 { 
-        font-size: 32px; 
-    }
-    
-    .btn { 
-        padding: 12px 15px; 
-        font-size: 14px; 
-    }
-    
-    .investor-item, .withdraw-request-item { 
-        padding: 12px; 
-    }
-    
-    .withdraw-details { 
-        flex-direction: column; 
-        align-items: flex-start; 
-        gap: 4px; 
-    }
-}
-
-/* ===== SCROLLBAR STYLING ===== */
-::-webkit-scrollbar { 
-    width: 6px; 
-}
-
-::-webkit-scrollbar-track { 
-    background: rgba(255, 255, 255, 0.1); 
-    border-radius: 3px; 
-}
-
-::-webkit-scrollbar-thumb { 
-    background: #00ffcc; 
-    border-radius: 3px; 
-}
-
-::-webkit-scrollbar-thumb:hover { 
-    background: #00ccaa; 
-}
-
-/* ===== LOADING ANIMATION ===== */
-@keyframes pulse {
-    0%, 100% { 
-        opacity: 1; 
-    }
-    50% { 
-        opacity: 0.5; 
-    }
-}
-
-.loading { 
-    animation: pulse 1.5s ease-in-out infinite; 
-}
-
-/* ===== TEXT STYLES ===== */
-.text-center { 
-    text-align: center; 
-}
-
-.text-gradient {
-    background: linear-gradient(135deg, #00ffcc, #00ccaa);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-}
-
-/* ===== CALCULATOR STYLES ===== */
-.calculator-section {
-    margin-bottom: 25px; 
-    padding: 20px; 
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
-    border-radius: 16px; 
-    color: white;
-    position: relative;
-    overflow: hidden;
-}
-
-.calculator-section::before {
-    content: '';
-    position: absolute;
-    top: -50%;
-    left: -50%;
-    width: 200%;
-    height: 200%;
-    background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
-    animation: rotate 15s linear infinite;
-}
-
-.calc-result-row {
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 10px;
-    padding: 8px 0;
-    border-bottom: 1px solid rgba(255,255,255,0.2);
-    position: relative;
-}
-
-.calc-result-row:last-child {
-    border-bottom: none;
-    margin-bottom: 0;
-}
-
-/* ===== QR CODE SECTION ===== */
-#qr-section {
-    text-align: center;
-    margin-top: 20px;
-    padding: 20px;
-    background: rgba(255,255,255,0.05);
-    border-radius: 16px;
-    border: 1px solid rgba(0,255,204,0.2);
-    backdrop-filter: blur(10px);
-    position: relative;
-}
-
-#qr-img {
-    border: 1px solid #ccc;
-    border-radius: 12px;
-    padding: 6px;
-    background: white;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-}
-
-/* ===== INVESTOR ROW STYLES ===== */
-.investor-row {
-    display: flex;
-    align-items: center;
-    padding: 12px;
-    margin-bottom: 8px;
-    background: rgba(255,255,255,0.05);
-    border-radius: 10px;
-    border-left: 3px solid #00ffcc;
-    transition: all 0.3s ease;
-    position: relative;
-}
-
-.investor-row:hover {
-    background: rgba(255,255,255,0.08);
-    transform: translateX(5px);
-}
-
-.investor-rank {
-    font-weight: bold;
-    color: #00ffcc;
-    min-width: 40px;
-    text-align: center;
-}
-
-.investor-name {
-    flex: 1;
-    font-weight: 600;
-}
-
-.investor-amount {
-    font-weight: bold;
-    color: #FFD700;
-    margin-right: 15px;
-}
-
-.investor-change {
-    padding: 4px 8px;
-    border-radius: 6px;
-    font-size: 12px;
-    font-weight: bold;
-}
-
-.investor-change.positive {
-    background: rgba(76,175,80,0.2);
-    color: #4CAF50;
-}
-
-.investor-change.negative {
-    background: rgba(244,67,54,0.2);
-    color: #f44336;
-}
-
-/* ===== WITHDRAW ROW STYLES ===== */
-.withdraw-row {
-    display: flex;
-    align-items: center;
-    padding: 12px;
-    margin-bottom: 8px;
-    background: rgba(255,255,255,0.05);
-    border-radius: 10px;
-    border-left: 3px solid #FFA726;
-    transition: all 0.3s ease;
-    position: relative;
-}
-
-.withdraw-row:hover {
-    background: rgba(255,255,255,0.08);
-    transform: translateX(5px);
-}
-
-.withdraw-row.completed {
-    border-left-color: #4CAF50;
-}
-
-.withdraw-row.processing {
-    border-left-color: #2196F3;
-}
-
-.withdraw-row.pending {
-    border-left-color: #FFA726;
-}
-
-.withdraw-user {
-    flex: 1;
-    font-weight: 600;
-}
-
-.withdraw-amount {
-    font-weight: bold;
-    color: #FFD700;
-    margin-right: 15px;
-}
-
-.withdraw-address {
-    color: #888;
-    font-family: 'Courier New', monospace;
-    font-size: 11px;
-    margin-right: 15px;
-}
-
-.withdraw-status {
-    padding: 4px 8px;
-    border-radius: 6px;
-    font-size: 11px;
-    font-weight: bold;
-    text-transform: uppercase;
-}
-
-.withdraw-status.completed {
-    background: rgba(76,175,80,0.2);
-    color: #4CAF50;
-}
-
-.withdraw-status.processing {
-    background: rgba(33,150,243,0.2);
-    color: #2196F3;
-}
-
-.withdraw-status.pending {
-    background: rgba(255,167,38,0.2);
-    color: #FFA726;
-}
-
-.withdraw-time {
-    color: #888;
-    font-size: 11px;
-    margin-left: 15px;
-}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CryptoHunter Miner</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* ===== BASE STYLES ===== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+            color: #fff;
+            min-height: 100vh;
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+        .container {
+            max-width: 450px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* ===== HEADER ===== */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            position: relative;
+        }
+        h1 {
+            font-size: 32px;
+            margin: 12px 0 8px;
+            background: linear-gradient(135deg, #00ffcc, #00ccaa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-align: center;
+            font-weight: 900;
+            flex: 1;
+            text-shadow: 0 0 20px rgba(0, 255, 204, 0.3);
+        }
+
+        /* ===== LANGUAGE SWITCHER ===== */
+        .language-switcher {
+            display: flex;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 4px;
+            gap: 4px;
+            border: 1px solid rgba(0, 255, 204, 0.3);
+            backdrop-filter: blur(10px);
+        }
+        .lang-btn {
+            background: transparent;
+            border: none;
+            color: #fff;
+            padding: 6px 12px;
+            border-radius: 16px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            min-width: 40px;
+        }
+        .lang-btn.active {
+            background: #00ffcc;
+            color: #0f0c29;
+            box-shadow: 0 0 10px rgba(0, 255, 204, 0.5);
+        }
+        .lang-btn:hover:not(.active) {
+            background: rgba(255, 255, 255, 0.1);
+            transform: scale(1.05);
+        }
+
+        /* ===== MINING GIF ===== */
+        .mining-gif {
+            width: 180px;
+            height: 180px;
+            margin: 18px auto;
+            border-radius: 50%;
+            box-shadow: 
+                0 0 40px rgba(0, 255, 204, 0.6),
+                inset 0 0 20px rgba(0, 255, 204, 0.2);
+            display: block;
+            object-fit: cover;
+            border: 3px solid rgba(0, 255, 204, 0.3);
+            animation: pulse 2s ease-in-out infinite alternate;
+        }
+
+        @keyframes pulse {
+            0% {
+                box-shadow: 
+                    0 0 40px rgba(0, 255, 204, 0.6),
+                    inset 0 0 20px rgba(0, 255, 204, 0.2);
+            }
+            100% {
+                box-shadow: 
+                    0 0 60px rgba(0, 255, 204, 0.8),
+                    inset 0 0 30px rgba(0, 255, 204, 0.3);
+            }
+        }
+
+        /* ===== TOP ACTIONS ===== */
+        .top-actions {
+            display: flex;
+            gap: 16px;
+            margin: 22px 0 28px;
+            justify-content: center;
+        }
+        .action-btn {
+            flex: 1;
+            background: rgba(0, 255, 204, 0.18);
+            border: 2.5px solid #00ffcc;
+            border-radius: 20px;
+            padding: 18px 12px;
+            color: #fff;
+            font-weight: 800;
+            font-size: 15px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.35s ease;
+            cursor: pointer;
+            backdrop-filter: blur(10px);
+            position: relative;
+            overflow: hidden;
+        }
+        .action-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s;
+        }
+        .action-btn:hover::before {
+            left: 100%;
+        }
+        .action-btn:hover {
+            background: rgba(0, 255, 204, 0.35);
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0, 255, 204, 0.3);
+        }
+        .action-btn img {
+            transition: transform 0.3s ease;
+        }
+        .action-btn:hover img {
+            transform: scale(1.1);
+        }
+
+        /* ===== BALANCE CARD ===== */
+        .balance-card {
+            background: linear-gradient(135deg, rgba(0,255,204,0.15), rgba(0,255,204,0.05));
+            border: 2.5px solid #00ffcc;
+            border-radius: 24px;
+            padding: 22px;
+            margin: 25px 0;
+            text-align: center;
+            backdrop-filter: blur(10px);
+            position: relative;
+            overflow: hidden;
+        }
+        .balance-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(0,255,204,0.1) 0%, transparent 70%);
+            animation: rotate 10s linear infinite;
+        }
+        @keyframes rotate {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .balance-card h2 {
+            font-size: 42px;
+            color: #00ffcc;
+            font-weight: 900;
+            margin: 10px 0;
+            text-shadow: 0 0 10px rgba(0, 255, 204, 0.5);
+            position: relative;
+        }
+        .balance-card p:first-child {
+            font-size: 14px;
+            opacity: 0.8;
+            font-weight: 600;
+            position: relative;
+        }
+        .balance-card p:last-child {
+            font-size: 16px;
+            font-weight: 700;
+            color: #fff;
+            position: relative;
+        }
+
+        /* ===== STATS GRID ===== */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 14px;
+            margin: 28px 0;
+        }
+        .stat {
+            background: rgba(255, 255, 255, 0.09);
+            padding: 16px 10px;
+            border-radius: 18px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        .stat::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #00ffcc, transparent);
+            transform: scaleX(0);
+            transition: transform 0.3s ease;
+        }
+        .stat:hover::before {
+            transform: scaleX(1);
+        }
+        .stat:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            border-color: rgba(0, 255, 204, 0.3);
+        }
+        .stat b {
+            display: block;
+            font-size: 19px;
+            color: #00ffcc;
+            font-weight: 800;
+            margin-top: 5px;
+        }
+        .stat p {
+            font-size: 12px;
+            opacity: 0.8;
+            font-weight: 600;
+        }
+
+        /* ===== NAV BUTTONS ===== */
+        .nav-buttons {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 14px;
+            margin: 32px 0 20px;
+        }
+        .nav-btn {
+            background: linear-gradient(135deg, #00ffcc, #00ccaa);
+            color: #000;
+            border: none;
+            padding: 16px;
+            border-radius: 18px;
+            font-weight: 800;
+            font-size: 15px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        .nav-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+            transition: left 0.5s;
+        }
+        .nav-btn:hover::before {
+            left: 100%;
+        }
+        .nav-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 255, 204, 0.4);
+        }
+        .nav-btn img {
+            transition: transform 0.3s ease;
+        }
+        .nav-btn:hover img {
+            transform: scale(1.1);
+        }
+
+        /* ===== CARDS ===== */
+        .card {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            position: relative;
+            overflow: hidden;
+        }
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, #00ffcc, transparent);
+        }
+        .card h2 {
+            font-size: 18px;
+            margin-bottom: 15px;
+            color: #00ffcc;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            position: relative;
+        }
+
+        /* ===== DASHBOARD STYLES ===== */
+        .stats-section {
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            position: relative;
+        }
+        .stats-section h3 {
+            font-size: 16px;
+            margin-bottom: 12px;
+            color: #00ffcc;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .stats-section:last-child {
+            border-bottom: none;
+        }
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 14px;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            transition: background 0.3s ease;
+        }
+        .stat-row:hover {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            padding: 8px;
+        }
+        .stat-row:last-child {
+            margin-bottom: 0;
+            border-bottom: none;
+        }
+
+        /* ===== УЛУЧШЕННЫЕ СТИЛИ ДЛЯ ТОП ИНВЕСТОРОВ ===== */
+        .top-investors-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 8px;
+            margin-top: 12px;
+        }
+        .investor-item {
+            display: flex;
+            align-items: center;
+            padding: 14px 16px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            border-left: 4px solid #00ffcc;
+            transition: all 0.3s ease;
+            animation: slideInFromRight 0.5s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        .investor-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+            transition: left 0.5s;
+        }
+        .investor-item:hover::before {
+            left: 100%;
+        }
+        .investor-item:hover {
+            background: rgba(255, 255, 255, 0.08);
+            transform: translateX(4px);
+        }
+        .investor-rank {
+            font-weight: bold;
+            color: #00ffcc;
+            min-width: 40px;
+            font-size: 16px;
+            text-align: center;
+            position: relative;
+        }
+        .investor-info {
+            flex: 1;
+            margin: 0 15px;
+            position: relative;
+        }
+        .investor-name {
+            font-weight: 600;
+            font-size: 15px;
+            color: #fff;
+            margin-bottom: 4px;
+        }
+        .investor-amount {
+            font-weight: bold;
+            font-size: 16px;
+            color: #FFD700;
+        }
+        .investor-change {
+            font-size: 12px;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-weight: bold;
+            min-width: 60px;
+            text-align: center;
+            position: relative;
+        }
+        .investor-change.positive {
+            background: rgba(76, 175, 80, 0.2);
+            color: #4CAF50;
+            border: 1px solid rgba(76, 175, 80, 0.3);
+        }
+        .investor-change.negative {
+            background: rgba(244, 67, 54, 0.2);
+            color: #F44336;
+            border: 1px solid rgba(244, 67, 54, 0.3);
+        }
+        /* Цвета для топ-3 */
+        .investor-item:nth-child(1) {
+            border-left-color: gold;
+            background: linear-gradient(135deg, rgba(255,215,0,0.1), rgba(255,215,0,0.05));
+        }
+        .investor-item:nth-child(2) {
+            border-left-color: silver;
+            background: linear-gradient(135deg, rgba(192,192,192,0.1), rgba(192,192,192,0.05));
+        }
+        .investor-item:nth-child(3) {
+            border-left-color: #cd7f32;
+            background: linear-gradient(135deg, rgba(205,127,50,0.1), rgba(205,127,50,0.05));
+        }
+
+        /* ===== УЛУЧШЕННЫЕ СТИЛИ ДЛЯ ЗАЯВОК НА ВЫВОД ===== */
+        .withdraw-requests-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 8px;
+            margin-top: 12px;
+        }
+        .withdraw-request-item {
+            display: flex;
+            align-items: center;
+            padding: 14px 16px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            border-left: 4px solid #FFA726;
+            transition: all 0.3s ease;
+            animation: slideInFromRight 0.5s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        .withdraw-request-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+            transition: left 0.5s;
+        }
+        .withdraw-request-item:hover::before {
+            left: 100%;
+        }
+        .withdraw-request-item.completed {
+            border-left-color: #4CAF50;
+            opacity: 0.8;
+        }
+        .withdraw-request-item.processing {
+            border-left-color: #2196F3;
+        }
+        .withdraw-request-item.pending {
+            border-left-color: #FFA726;
+        }
+        .withdraw-request-item:hover {
+            background: rgba(255, 255, 255, 0.08);
+            transform: translateX(4px);
+        }
+        .user-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #00ffcc, #00ccaa);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: #000;
+            font-size: 14px;
+            margin-right: 12px;
+            position: relative;
+        }
+        .withdraw-info {
+            flex: 1;
+            position: relative;
+        }
+        .withdraw-user {
+            font-weight: 600;
+            font-size: 15px;
+            color: #fff;
+            margin-bottom: 2px;
+        }
+        .withdraw-details {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 13px;
+        }
+        .withdraw-amount {
+            color: #FFD700;
+            font-weight: bold;
+        }
+        .withdraw-address {
+            color: #888;
+            font-family: 'Courier New', monospace;
+            font-size: 11px;
+        }
+        .withdraw-status-section {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 4px;
+            position: relative;
+        }
+        .withdraw-status {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            position: relative;
+        }
+        .withdraw-status.completed {
+            background: rgba(76, 175, 80, 0.2);
+            color: #4CAF50;
+            border: 1px solid rgba(76, 175, 80, 0.3);
+        }
+        .withdraw-status.processing {
+            background: rgba(33, 150, 243, 0.2);
+            color: #2196F3;
+            border: 1px solid rgba(33, 150, 243, 0.3);
+        }
+        .withdraw-status.pending {
+            background: rgba(255, 167, 38, 0.2);
+            color: #FFA726;
+            border: 1px solid rgba(255, 167, 38, 0.3);
+        }
+        .withdraw-time {
+            color: #888;
+            font-size: 11px;
+            font-weight: 500;
+        }
+
+        /* ===== СПИСКИ ===== */
+        .list-box {
+            max-height: 400px;
+            overflow-y: auto;
+            background: rgba(0,0,0,0.3);
+            border-radius: 12px;
+            padding: 12px;
+            margin-top: 10px;
+            border: 1px solid rgba(255,255,255,0.1);
+            position: relative;
+        }
+
+        /* ===== АНИМАЦИИ ===== */
+        @keyframes slideInFromRight {
+            from { 
+                opacity: 0; 
+                transform: translateX(30px); 
+            }
+            to { 
+                opacity: 1; 
+                transform: translateX(0); 
+            }
+        }
+        @keyframes highlight {
+            0% { background: rgba(76, 175, 80, 0.3); }
+            100% { background: rgba(255,255,255,0.05); }
+        }
+        .highlight {
+            animation: highlight 1s ease-in-out;
+        }
+
+        /* ===== REFERRAL STYLES ===== */
+        .ref-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        .ref-stat {
+            text-align: center;
+            background: rgba(0, 255, 204, 0.1);
+            padding: 15px 10px;
+            border-radius: 15px;
+            border: 1px solid rgba(0, 255, 204, 0.2);
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        .ref-stat:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0, 255, 204, 0.2);
+            border-color: rgba(0, 255, 204, 0.4);
+        }
+        .ref-stat-value {
+            font-size: 20px;
+            font-weight: bold;
+            color: #00ffcc;
+            margin-bottom: 5px;
+            position: relative;
+        }
+        .ref-stat-label {
+            font-size: 12px;
+            opacity: 0.8;
+            position: relative;
+        }
+        .ref-link-container {
+            margin-top: 20px;
+            position: relative;
+        }
+        .ref-link-box {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 15px;
+            margin: 15px 0;
+            word-break: break-all;
+            font-size: 13px;
+            border: 1px solid rgba(0, 255, 204, 0.3);
+            font-family: 'Courier New', monospace;
+            position: relative;
+            backdrop-filter: blur(10px);
+        }
+
+        /* ===== FORM ELEMENTS ===== */
+        .input-group {
+            margin-bottom: 15px;
+            position: relative;
+        }
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            position: relative;
+        }
+        .input-field {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid rgba(0, 255, 204, 0.3);
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            position: relative;
+        }
+        .input-field::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+        }
+        .input-field:focus {
+            outline: none;
+            border-color: #00ffcc;
+            box-shadow: 0 0 10px rgba(0, 255, 204, 0.3);
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        /* ===== BUTTONS ===== */
+        .btn {
+            background: linear-gradient(135deg, #00ffcc, #00ccaa);
+            color: #000;
+            border: none;
+            padding: 15px 20px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            width: 100%;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            position: relative;
+            overflow: hidden;
+        }
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+            transition: left 0.5s;
+        }
+        .btn:hover::before {
+            left: 100%;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 255, 204, 0.4);
+        }
+        .big-btn {
+            padding: 18px;
+            font-size: 16px;
+            font-weight: 700;
+        }
+        .copy-btn {
+            background: linear-gradient(135deg, #2196F3, #1976D2);
+            width: auto;
+            min-width: 200px;
+            margin: 10px auto;
+            color: white;
+        }
+        .check-btn {
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            color: white;
+        }
+        .back {
+            background: linear-gradient(135deg, #666, #555);
+            color: white;
+            margin-top: 20px;
+        }
+        .back:hover {
+            background: linear-gradient(135deg, #777, #666);
+        }
+
+        /* ===== SECTIONS ===== */
+        .section {
+            display: none;
+            animation: fadeOut 0.3s ease;
+        }
+        .section.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes fadeOut {
+            from { opacity: 1; transform: translateY(0); }
+            to { opacity: 0; transform: translateY(-10px); }
+        }
+
+        /* ===== NOTIFICATIONS ===== */
+        .notification {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-20px);
+            padding: 15px 25px;
+            background: #00ffcc;
+            color: #000;
+            border-radius: 12px;
+            font-weight: 600;
+            z-index: 1000;
+            opacity: 0;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+            text-align: center;
+            max-width: 90%;
+            backdrop-filter: blur(10px);
+        }
+        .notification.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+        .notification.error { 
+            background: #ff4444; 
+            color: #fff; 
+        }
+        .notification.info { 
+            background: #2196F3; 
+            color: #fff; 
+        }
+        .notification.success { 
+            background: #4CAF50; 
+            color: #fff; 
+        }
+
+        /* ===== STATUS MESSAGES ===== */
+        .status-message {
+            padding: 12px;
+            border-radius: 8px;
+            margin: 10px 0;
+            font-size: 14px;
+            text-align: center;
+            border: 1px solid;
+            backdrop-filter: blur(10px);
+            position: relative;
+        }
+        .status-success { 
+            background: rgba(76, 175, 80, 0.2); 
+            color: #4CAF50; 
+            border-color: #4CAF50; 
+        }
+        .status-error { 
+            background: rgba(244, 67, 54, 0.2); 
+            color: #f44336; 
+            border-color: #f44336; 
+        }
+
+        /* ===== RESPONSIVE DESIGN ===== */
+        @media (max-width: 480px) {
+            .container { 
+                padding: 15px; 
+            }
+            h1 { 
+                font-size: 28px; 
+            }
+            .header { 
+                flex-direction: column; 
+                gap: 10px; 
+                text-align: center; 
+            }
+            .language-switcher { 
+                align-self: center; 
+            }
+            .mining-gif { 
+                width: 140px; 
+                height: 140px; 
+            }
+            .top-actions { 
+                flex-direction: column; 
+                gap: 12px; 
+            }
+            .stats-grid, .ref-stats { 
+                grid-template-columns: 1fr; 
+                gap: 10px; 
+            }
+            .balance-card h2 { 
+                font-size: 32px; 
+            }
+            .btn { 
+                padding: 12px 15px; 
+                font-size: 14px; 
+            }
+            .investor-item, .withdraw-request-item { 
+                padding: 12px; 
+            }
+            .withdraw-details { 
+                flex-direction: column; 
+                align-items: flex-start; 
+                gap: 4px; 
+            }
+        }
+
+        /* ===== SCROLLBAR STYLING ===== */
+        ::-webkit-scrollbar { 
+            width: 6px; 
+        }
+        ::-webkit-scrollbar-track { 
+            background: rgba(255, 255, 255, 0.1); 
+            border-radius: 3px; 
+        }
+        ::-webkit-scrollbar-thumb { 
+            background: #00ffcc; 
+            border-radius: 3px; 
+        }
+        ::-webkit-scrollbar-thumb:hover { 
+            background: #00ccaa; 
+        }
+
+        /* ===== LOADING ANIMATION ===== */
+        @keyframes pulse {
+            0%, 100% { 
+                opacity: 1; 
+            }
+            50% { 
+                opacity: 0.5; 
+            }
+        }
+        .loading { 
+            animation: pulse 1.5s ease-in-out infinite; 
+        }
+
+        /* ===== TEXT STYLES ===== */
+        .text-center { 
+            text-align: center; 
+        }
+        .text-gradient {
+            background: linear-gradient(135deg, #00ffcc, #00ccaa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        /* ===== CALCULATOR STYLES ===== */
+        .calculator-section {
+            margin-bottom: 25px; 
+            padding: 20px; 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+            border-radius: 16px; 
+            color: white;
+            position: relative;
+            overflow: hidden;
+        }
+        .calculator-section::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+            animation: rotate 15s linear infinite;
+        }
+        .calc-result-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.2);
+            position: relative;
+        }
+        .calc-result-row:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+        }
+
+        /* ===== УЛУЧШЕННЫЕ СТИЛИ ДЛЯ QR-СЕКЦИИ ===== */
+        #qr-section {
+            display: none;
+            text-align: center;
+            margin-top: 25px;
+            padding: 25px;
+            background: linear-gradient(135deg, rgba(0, 255, 204, 0.1), rgba(0, 255, 204, 0.05));
+            border-radius: 20px;
+            border: 2px solid rgba(0, 255, 204, 0.3);
+            backdrop-filter: blur(15px);
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+        #qr-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #00ffcc, transparent);
+        }
+        #qr-section p:first-child {
+            font-size: 18px;
+            font-weight: 700;
+            color: #00ffcc;
+            margin-bottom: 20px;
+            text-shadow: 0 0 10px rgba(0, 255, 204, 0.5);
+        }
+        #qr-img {
+            border: 1px solid #ccc;
+            border-radius: 12px;
+            padding: 6px;
+            background: white;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            margin: 10px 0;
+            width: 220px;
+            height: 220px;
+        }
+        .qr-info-block {
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            padding: 15px;
+            margin: 15px 0;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            text-align: left;
+        }
+        .qr-info-label {
+            font-weight: 600;
+            color: #00ffcc;
+            margin-bottom: 5px;
+            font-size: 14px;
+        }
+        .qr-info-value {
+            word-break: break-all;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 8px;
+            border-radius: 6px;
+            margin: 5px 0;
+        }
+        .bonus-highlight {
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            color: white;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-weight: 700;
+            display: inline-block;
+            margin: 10px 0;
+            box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+        }
+
+        /* ===== INVESTOR ROW STYLES ===== */
+        .investor-row {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            margin-bottom: 8px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 10px;
+            border-left: 3px solid #00ffcc;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+        .investor-row:hover {
+            background: rgba(255,255,255,0.08);
+            transform: translateX(5px);
+        }
+        .investor-rank {
+            font-weight: bold;
+            color: #00ffcc;
+            min-width: 40px;
+            text-align: center;
+        }
+        .investor-name {
+            flex: 1;
+            font-weight: 600;
+        }
+        .investor-amount {
+            font-weight: bold;
+            color: #FFD700;
+            margin-right: 15px;
+        }
+        .investor-change {
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .investor-change.positive {
+            background: rgba(76,175,80,0.2);
+            color: #4CAF50;
+        }
+        .investor-change.negative {
+            background: rgba(244,67,54,0.2);
+            color: #f44336;
+        }
+
+        /* ===== WITHDRAW ROW STYLES ===== */
+        .withdraw-row {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            margin-bottom: 8px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 10px;
+            border-left: 3px solid #FFA726;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+        .withdraw-row:hover {
+            background: rgba(255,255,255,0.08);
+            transform: translateX(5px);
+        }
+        .withdraw-row.completed {
+            border-left-color: #4CAF50;
+        }
+        .withdraw-row.processing {
+            border-left-color: #2196F3;
+        }
+        .withdraw-row.pending {
+            border-left-color: #FFA726;
+        }
+        .withdraw-user {
+            flex: 1;
+            font-weight: 600;
+        }
+        .withdraw-amount {
+            font-weight: bold;
+            color: #FFD700;
+            margin-right: 15px;
+        }
+        .withdraw-address {
+            color: #888;
+            font-family: 'Courier New', monospace;
+            font-size: 11px;
+            margin-right: 15px;
+        }
+        .withdraw-status {
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        .withdraw-status.completed {
+            background: rgba(76,175,80,0.2);
+            color: #4CAF50;
+        }
+        .withdraw-status.processing {
+            background: rgba(33,150,243,0.2);
+            color: #2196F3;
+        }
+        .withdraw-status.pending {
+            background: rgba(255,167,38,0.2);
+            color: #FFA726;
+        }
+        .withdraw-time {
+            color: #888;
+            font-size: 11px;
+            margin-left: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- === ЗАГОЛОВОК === -->
+        <div class="header">
+            <h1>CryptoHunter</h1>
+            <div class="language-switcher">
+                <button id="lang-ru" class="lang-btn active" onclick="changeLanguage('ru')">RU</button>
+                <button id="lang-en" class="lang-btn" onclick="changeLanguage('en')">ENG</button>
+            </div>
+        </div>
+
+        <!-- === ГЛАВНЫЙ ЭКРАН === -->
+        <div id="stats" class="section active">
+            <img src="/webapp/assets/mining.gif" alt="Mining" class="mining-gif">
+            
+            <div class="top-actions">
+                <button onclick="showSection('invest')" class="action-btn invest">
+                    <i class="fas fa-coins" style="font-size:24px;"></i>
+                    <span data-i18n="invest">Инвестировать</span>
+                </button>
+                <button onclick="showSection('withdraw')" class="action-btn withdraw">
+                    <i class="fas fa-wallet" style="font-size:24px;"></i>
+                    <span data-i18n="withdraw">Вывод</span>
+                </button>
+            </div>
+
+            <div class="balance-card">
+                <p data-i18n="your_balance">ВАШ БАЛАНС</p>
+                <h2 id="balance">0.0000</h2>
+                <p>TON</p>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat"><p data-i18n="invested">Инвестировано</p><b id="invested">0.00</b></div>
+                <div class="stat"><p data-i18n="earned">Заработано</p><b id="earned">0.0000</b></div>
+                <div class="stat"><p data-i18n="speed">Скорость</p><b id="speed">100%</b></div>
+            </div>
+
+            <div class="nav-buttons">
+                <button onclick="showSection('dashboard')" class="nav-btn">
+                    <i class="fas fa-chart-line"></i>
+                    <span data-i18n="detailed_stats">Детальная статистика</span>
+                </button>
+                <button onclick="showSection('referral')" class="nav-btn">
+                    <i class="fas fa-users"></i>
+                    <span data-i18n="referral_program">Реферальная программа</span>
+                </button>
+            </div>
+
+            <button id="refresh-btn" class="btn big-btn" style="margin:20px auto;display:block;background:#4CAF50;" onclick="refresh()">
+                <i class="fas fa-sync-alt"></i>
+                <span data-i18n="refresh">Обновить</span>
+            </button>
+        </div>
+
+        <!-- === ДЕТАЛЬНАЯ СТАТИСТИКА === -->
+        <div id="dashboard" class="section">
+            <div class="card">
+                <h2><i class="fas fa-chart-bar"></i> <span data-i18n="detailed_stats">Детальная статистика</span></h2>
+                
+                <div class="stats-section">
+                    <h3><i class="fas fa-users"></i> <span data-i18n="community">СООБЩЕСТВО</span></h3>
+                    <div class="stat-row">
+                        <span data-i18n="total_subscribers">Всего подписчиков:</span>
+                        <b id="total-subscribers">0</b>
+                    </div>
+                    <div class="stat-row">
+                        <span data-i18n="active_today">Активных сегодня:</span>
+                        <b id="active-today">0</b>
+                    </div>
+                </div>
+
+                <div class="stats-section">
+                    <h3><i class="fas fa-chart-line"></i> <span data-i18n="investments">ИНВЕСТИЦИИ</span></h3>
+                    <div class="stat-row"><span data-i18n="amount">Сумма:</span><b id="dash-invested">0.00 TON</b></div>
+                    <div class="stat-row"><span data-i18n="day">День:</span><b id="dash-daily-inv">0.000 TON</b></div>
+                    <div class="stat-row"><span data-i18n="week">Неделя:</span><b id="dash-weekly-inv">0.000 TON</b></div>
+                    <div class="stat-row"><span data-i18n="month">Месяц:</span><b id="dash-monthly-inv">0.00 TON</b></div>
+                </div>
+
+                <div class="stats-section">
+                    <h3><i class="fas fa-gem"></i> <span data-i18n="free_mining">БЕСПЛАТНЫЙ МАЙНИНГ</span></h3>
+                    <div class="stat-row"><span data-i18n="speed">Скорость:</span><b id="dash-speed">100%</b></div>
+                    <div class="stat-row"><span data-i18n="day">День:</span><b id="dash-daily-free">0.0000 TON</b></div>
+                    <div class="stat-row"><span data-i18n="ton_per_days">1 TON за:</span><b id="dash-days-per-ton">0.0 дней</b></div>
+                    <div class="stat-row"><span data-i18n="accumulated">Накоплено:</span><b id="dash-accumulated">0.00 TON</b></div>
+                </div>
+
+                <div class="stats-section">
+                    <h3><i class="fas fa-bolt"></i> <span data-i18n="currently_earning">СЕЙЧАС НАЧИСЛЯЕТСЯ</span></h3>
+                    <div class="stat-row"><span data-i18n="per_day">В день:</span><b id="dash-total-daily">0.0000 TON</b></div>
+                    <div class="stat-row"><span data-i18n="per_hour">В час:</span><b id="dash-hourly">0.0000 TON</b></div>
+                </div>
+
+                <!-- ТОП 10 ИНВЕСТОРОВ -->
+                <div class="stats-section">
+                    <h3><i class="fas fa-trophy"></i> <span data-i18n="top_investors">ТОП 10 ИНВЕСТОРОВ</span></h3>
+                    <div id="top-investors-list" class="list-box">
+                        <div class="investor-row">
+                            <div class="investor-rank">#1</div>
+                            <div class="investor-name">CryptoWolf</div>
+                            <div class="investor-amount">15,245.50 TON</div>
+                            <div class="investor-change positive">↗ 2.3%</div>
+                        </div>
+                        <div class="investor-row">
+                            <div class="investor-rank">#2</div>
+                            <div class="investor-name">TONHunter</div>
+                            <div class="investor-amount">12,890.25 TON</div>
+                            <div class="investor-change positive">↗ 1.8%</div>
+                        </div>
+                        <div class="investor-row">
+                            <div class="investor-rank">#3</div>
+                            <div class="investor-name">BlockShark</div>
+                            <div class="investor-amount">11,567.80 TON</div>
+                            <div class="investor-change negative">↘ 0.5%</div>
+                        </div>
+                        <div class="investor-row">
+                            <div class="investor-rank">#4</div>
+                            <div class="investor-name">Moonrider</div>
+                            <div class="investor-amount">8,945.30 TON</div>
+                            <div class="investor-change positive">↗ 3.1%</div>
+                        </div>
+                        <div class="investor-row">
+                            <div class="investor-rank">#5</div>
+                            <div class="investor-name">Tonik</div>
+                            <div class="investor-amount">7,234.15 TON</div>
+                            <div class="investor-change positive">↗ 1.2%</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ЗАЯВКИ НА ВЫВОД -->
+                <div class="stats-section">
+                    <h3><i class="fas fa-money-bill-wave"></i> <span data-i18n="withdraw_requests">ЗАЯВКИ НА ВЫВОД</span></h3>
+                    <div id="withdraw-requests-list" class="list-box">
+                        <div class="withdraw-row completed">
+                            <div class="withdraw-user">Andrey</div>
+                            <div class="withdraw-amount">125.50 TON</div>
+                            <div class="withdraw-address">kQ1234...abcd</div>
+                            <div class="withdraw-status completed">Выполнен</div>
+                            <div class="withdraw-time">2ч 15м назад</div>
+                        </div>
+                        <div class="withdraw-row processing">
+                            <div class="withdraw-user">Ivan</div>
+                            <div class="withdraw-amount">89.75 TON</div>
+                            <div class="withdraw-address">UQ5678...efgh</div>
+                            <div class="withdraw-status processing">В процессе</div>
+                            <div class="withdraw-time">45м назад</div>
+                        </div>
+                        <div class="withdraw-row pending">
+                            <div class="withdraw-user">Anna</div>
+                            <div class="withdraw-amount">234.20 TON</div>
+                            <div class="withdraw-address">EQ9012...ijkl</div>
+                            <div class="withdraw-status pending">Ожидание</div>
+                            <div class="withdraw-time">15м назад</div>
+                        </div>
+                        <div class="withdraw-row completed">
+                            <div class="withdraw-user">Sergey</div>
+                            <div class="withdraw-amount">67.80 TON</div>
+                            <div class="withdraw-address">kQ3456...mnop</div>
+                            <div class="withdraw-status completed">Выполнен</div>
+                            <div class="withdraw-time">5ч 30м назад</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="stats-section">
+                    <h3><i class="fas fa-download"></i> Вывод</h3>
+                    <div class="stat-row"><span id="dash-withdraw-status">- <span data-i18n="not_ready">Не готово</span></span></div>
+                    <div class="stat-row"><span id="dash-min-withdraw" data-i18n="min_withdraw">Минимум: 1 TON (1.00 TON осталось)</span></div>
+                </div>
+            </div>
+            <button onclick="showSection('stats')" class="btn back" data-i18n="back"><i class="fas fa-arrow-left"></i> Назад</button>
+        </div>
+
+        <!-- === РЕФЕРАЛЫ === -->
+        <div id="referral" class="section">
+            <div class="card">
+                <h2><i class="fas fa-users"></i> <span data-i18n="referral_program">Реферальная программа</span></h2>
+                
+                <div class="ref-stats">
+                    <div class="ref-stat">
+                        <div class="ref-stat-value" id="ref-direct">0</div>
+                        <div class="ref-stat-label" data-i18n="direct_referrals">прямых рефералов</div>
+                    </div>
+                    <div class="ref-stat">
+                        <div class="ref-stat-value" id="ref-level2">0</div>
+                        <div class="ref-stat-label" data-i18n="level_2">2-й уровень</div>
+                    </div>
+                    <div class="ref-stat">
+                        <div class="ref-stat-value" id="ref-income">0.00</div>
+                        <div class="ref-stat-label" data-i18n="earned_ton">Заработано TON</div>
+                    </div>
+                </div>
+
+                <div class="ref-link-container">
+                    <p data-i18n="your_referral_link">Ваша реферальная ссылка:</p>
+                    <div class="ref-link-box" id="ref-link">https://t.me/cruptos023bot?start=ref_123</div>
+                    <button onclick="copyLink()" class="btn copy-btn" data-i18n="copy_link"><i class="fas fa-copy"></i> Скопировать ссылку</button>
+                </div>
+            </div>
+            <button onclick="showSection('stats')" class="btn back" data-i18n="back"><i class="fas fa-arrow-left"></i> Назад</button>
+        </div>
+
+        <!-- === ИНВЕСТ + КАЛЬКУЛЯТОР === -->
+        <div id="invest" class="section">
+            <div class="card">
+                <h2><i class="fas fa-coins"></i> <span data-i18n="investing">Инвестирование</span></h2>
+                
+                <!-- КАЛЬКУЛЯТОР ДОХОДНОСТИ -->
+                <div class="calculator-section">
+                    <h3 style="margin: 0 0 15px 0; text-align: center;" data-i18n="profit_calculator">Калькулятор доходности</h3>
+                    
+                    <div class="input-group" style="margin-bottom: 15px;">
+                        <label style="color: white;" data-i18n="investment_amount">Сумма инвестиции (TON):</label>
+                        <input type="number" id="calc-amount" class="input-field" 
+                               placeholder="Введите сумму" min="1" value="10" 
+                               style="background: rgba(255,255,255,0.9); color: #333;"
+                               oninput="calculateProfit()">
+                    </div>
+                    
+                    <div class="calculator-results" style="background: rgba(255,255,255,0.15); padding: 15px; border-radius: 12px; backdrop-filter: blur(10px);">
+                        <div class="calc-result-row">
+                            <span data-i18n="daily_income">Доход в день:</span>
+                            <b id="calc-daily">0.0000 TON</b>
+                        </div>
+                        <div class="calc-result-row">
+                            <span data-i18n="weekly_income">Доход в неделю:</span>
+                            <b id="calc-weekly">0.0000 TON</b>
+                        </div>
+                        <div class="calc-result-row">
+                            <span data-i18n="monthly_income">Доход в месяц:</span>
+                            <b id="calc-monthly">0.0000 TON</b>
+                        </div>
+                        <div class="calc-result-row">
+                            <span data-i18n="yearly_income">Доход в год:</span>
+                            <b id="calc-yearly">0.0000 TON</b>
+                        </div>
+                        <div class="calc-result-row" style="border-top: 1px solid rgba(255,255,255,0.3); padding-top: 10px; margin-top: 10px;">
+                            <span data-i18n="welcome_bonus">Приветственный бонус:</span>
+                            <span class="bonus-highlight" id="calc-bonus">+0.50 TON</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ФОРМА ИНВЕСТИРОВАНИЯ -->
+                <div class="input-group">
+                    <label data-i18n="investment_amount">Сумма инвестиции (TON):</label>
+                    <input type="number" id="invest-amount" class="input-field" placeholder="Минимум 1 TON" min="1">
+                </div>
+
+                <button onclick="createDeposit()" class="btn big-btn"><i class="fas fa-qrcode"></i> Сгенерировать QR для оплаты</button>
+
+                <div id="qr-section">
+                    <p data-i18n="scan_qr">Отсканируйте QR-код для оплаты:</p>
+                    <img id="qr-img" alt="QR Code" width="220" style="border:1px solid #ccc;border-radius:12px;padding:6px;">
+                    
+                    <div class="qr-info-block">
+                        <div class="qr-info-label">Адрес TON:</div>
+                        <div class="qr-info-value" id="qr-address">0:ff0b1bc933a7086601717e9296d66c7e004e18b4694c06d95f61a84f9134287c</div>
+                        
+                        <div class="qr-info-label">Комментарий:</div>
+                        <div class="qr-info-value" id="qr-comment">dep_8089114323_dsdbQWKhtOQV</div>
+                        
+                        <div class="qr-info-label">Ссылка для оплаты:</div>
+                        <div class="qr-info-value">ton://transfer/0:ff0b1bc933a7086601717e9296d66c7e004e18b4694c06d95f61a84f9134287c?amount=1000000000&text=dep_8089114323_dsdbQWKhtOQV</div>
+                    </div>
+                    
+                    <a id="payment-url" href="#" target="_blank" style="color:#2196F3; display:block; margin:15px 0;"><i class="fas fa-external-link-alt"></i> Открыть в кошельке</a>
+                    
+                    <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+                        <button onclick="copyAddress()" class="btn" style="width: auto; padding: 10px 15px;"><i class="fas fa-copy"></i> Адрес</button>
+                        <button onclick="copyComment()" class="btn" style="width: auto; padding: 10px 15px;"><i class="fas fa-copy"></i> Комментарий</button>
+                        <button onclick="copyPaymentUrl()" class="btn" style="width: auto; padding: 10px 15px;"><i class="fas fa-copy"></i> Ссылку</button>
+                    </div>
+                </div>
+            </div>
+            <button onclick="showSection('stats')" class="btn back" data-i18n="back"><i class="fas fa-arrow-left"></i> Назад</button>
+        </div>
+
+        <!-- === ВЫВОД === -->
+        <div id="withdraw" class="section">
+            <div class="card">
+                <h2><i class="fas fa-wallet"></i> <span data-i18n="withdraw_funds">Вывод средств</span></h2>
+                
+                <p data-i18n="available_for_withdraw">Доступно: <b id="withdraw-available">0.0000</b> TON</p>
+                
+                <div class="input-group">
+                    <label data-i18n="ton_wallet_address">Адрес TON кошелька:</label>
+                    <input type="text" id="withdraw-address" class="input-field" placeholder="Начинается с kQ, UQ или EQ">
+                </div>
+                
+                <div class="input-group">
+                    <label data-i18n="withdraw_amount">Сумма вывода (TON):</label>
+                    <input type="number" id="withdraw-amount" class="input-field" placeholder="Минимум 1 TON" min="1">
+                </div>
+
+                <button onclick="withdraw()" class="btn big-btn"><i class="fas fa-download"></i> Вывести средства</button>
+                
+                <div id="withdraw-status" class="status-message"></div>
+            </div>
+            <button onclick="showSection('stats')" class="btn back" data-i18n="back"><i class="fas fa-arrow-left"></i> Назад</button>
+        </div>
+    </div>
+
+    <!-- === УВЕДОМЛЕНИЯ === -->
+    <div id="notification" class="notification"></div>
+
+    <script>
+        // Функции для навигации
+        function showSection(sectionId) {
+            document.querySelectorAll('.section').forEach(section => {
+                section.classList.remove('active');
+            });
+            document.getElementById(sectionId).classList.add('active');
+        }
+
+        function changeLanguage(lang) {
+            document.querySelectorAll('.lang-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.getElementById(`lang-${lang}`).classList.add('active');
+            // Здесь можно добавить логику смены языка
+        }
+
+        // Функции для работы с приложением
+        function refresh() {
+            showNotification('Данные обновлены!', 'success');
+        }
+
+        function createDeposit() {
+            document.getElementById('qr-section').style.display = 'block';
+            showNotification('QR-код сгенерирован!', 'success');
+        }
+
+        function copyAddress() {
+            navigator.clipboard.writeText('0:ff0b1bc933a7086601717e9296d66c7e004e18b4694c06d95f61a84f9134287c');
+            showNotification('Адрес скопирован!', 'success');
+        }
+
+        function copyComment() {
+            navigator.clipboard.writeText('dep_8089114323_dsdbQWKhtOQV');
+            showNotification('Комментарий скопирован!', 'success');
+        }
+
+        function copyPaymentUrl() {
+            navigator.clipboard.writeText('ton://transfer/0:ff0b1bc933a7086601717e9296d66c7e004e18b4694c06d95f61a84f9134287c?amount=1000000000&text=dep_8089114323_dsdbQWKhtOQV');
+            showNotification('Ссылка скопирована!', 'success');
+        }
+
+        function copyLink() {
+            navigator.clipboard.writeText('https://t.me/cruptos023bot?start=ref_123');
+            showNotification('Реферальная ссылка скопирована!', 'success');
+        }
+
+        function withdraw() {
+            showNotification('Заявка на вывод отправлена!', 'success');
+        }
+
+        function showNotification(message, type = 'info') {
+            const notification = document.getElementById('notification');
+            notification.textContent = message;
+            notification.className = `notification ${type} show`;
+            
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 3000);
+        }
+
+        // Калькулятор доходности
+        function calculateProfit() {
+            const input = document.getElementById('calc-amount');
+            const amount = parseFloat(input?.value) || 0;
+
+            const results = {
+                daily: 0,
+                weekly: 0,
+                monthly: 0,
+                yearly: 0,
+                bonus: 0.50 // Фиксированный бонус
+            };
+
+            if (amount >= 1) {
+                const MONTHLY_RATE = 0.25;
+                const BASE_MINING_DAYS = 90;
+                const BONUS_PERCENT = 0.05;
+
+                // Инвестиционный доход в день
+                const investmentDaily = amount * (MONTHLY_RATE / 30);
+
+                // Ускорение майнинга: +1% за каждые 40 TON
+                const acceleration = Math.floor(amount / 40) * 0.01;
+                const miningSpeed = 1 + acceleration;
+
+                // Бесплатный майнинг в день
+                const freeMiningDaily = (1 / BASE_MINING_DAYS) * miningSpeed;
+
+                // Общий доход
+                const totalDaily = investmentDaily + freeMiningDaily;
+
+                results.daily = totalDaily;
+                results.weekly = totalDaily * 7;
+                results.monthly = totalDaily * 30;
+                results.yearly = totalDaily * 365;
+            }
+
+            // Обновление интерфейса
+            const set = (id, value, fixed = 4) => {
+                const el = document.getElementById(id);
+                if (el) el.textContent = value.toFixed(fixed) + ' TON';
+            };
+
+            set('calc-daily', results.daily, 6);
+            set('calc-weekly', results.weekly, 6);
+            set('calc-monthly', results.monthly, 4);
+            set('calc-yearly', results.yearly, 2);
+        }
+
+        // Запуск расчёта при загрузке страницы
+        document.addEventListener('DOMContentLoaded', () => {
+            if (document.getElementById('calc-amount')) {
+                calculateProfit();
+            }
+        });
+    </script>
+</body>
+</html>
