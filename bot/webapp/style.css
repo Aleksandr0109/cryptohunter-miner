@@ -274,86 +274,145 @@ h1 {
     border: 1px solid rgba(244, 67, 54, 0.3);
 }
 
-/* ===== ДИНАМИЧЕСКИЕ ЭЛЕМЕНТЫ ДЛЯ ЗАЯВОК НА ВЫВОД ===== */
-.withdraw-row {
+/* ===== СТИЛИ ДЛЯ ЗАЯВОК НА ВЫВОД ===== */
+.withdraw-requests-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    gap: 8px;
-    padding: 12px 10px;
-    margin: 6px 0;
-    background: rgba(255,255,255,0.05);
-    border-radius: 12px;
-    border-left: 4px solid #FFA726;
-    font-size: 12px;
+    grid-template-columns: 1fr;
+    gap: 12px;
+    margin-top: 15px;
+}
+
+.withdraw-request-card {
+    background: linear-gradient(135deg, rgba(255,255,255,0.08), rgba(255,255,255,0.03));
+    border-radius: 16px;
+    padding: 18px;
+    border: 1px solid rgba(255,255,255,0.1);
+    transition: all 0.3s ease;
     animation: slideInFromRight 0.5s ease;
+    position: relative;
+    overflow: hidden;
 }
 
-.withdraw-row.completed {
-    border-left-color: #4CAF50;
-    opacity: 0.8;
+.withdraw-request-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    background: #FFA726;
 }
 
-.withdraw-row.processing {
-    border-left-color: #2196F3;
+.withdraw-request-card.completed::before {
+    background: #4CAF50;
 }
 
-.withdraw-row.pending {
-    border-left-color: #FFA726;
+.withdraw-request-card.processing::before {
+    background: #2196F3;
 }
 
-.withdraw-user {
+.withdraw-request-card.pending::before {
+    background: #FFA726;
+}
+
+.withdraw-request-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+    background: linear-gradient(135deg, rgba(255,255,255,0.12), rgba(255,255,255,0.05));
+}
+
+.withdraw-request-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 12px;
+}
+
+.withdraw-request-user-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.user-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #00ffcc, #00ccaa);
+    display: flex;
+    align-items: center;
+    justify-content: center;
     font-weight: bold;
-    font-size: 13px;
+    color: #000;
+    font-size: 16px;
 }
 
-.withdraw-amount {
+.withdraw-request-user {
+    font-weight: bold;
+    font-size: 16px;
+    color: #fff;
+    margin-bottom: 4px;
+}
+
+.withdraw-request-amount {
+    font-weight: bold;
+    font-size: 18px;
     color: #FFD700;
-    font-weight: bold;
-    text-align: center;
+    text-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
+}
+
+.withdraw-request-address {
+    font-family: 'Courier New', monospace;
     font-size: 13px;
-}
-
-.withdraw-address {
     color: #888;
-    font-family: monospace;
-    grid-column: 1 / -1;
-    font-size: 11px;
-    margin-top: 4px;
+    margin-bottom: 12px;
+    word-break: break-all;
+    background: rgba(0,0,0,0.3);
+    padding: 8px 12px;
+    border-radius: 8px;
+    border: 1px solid rgba(255,255,255,0.1);
 }
 
-.withdraw-status {
-    text-align: center;
-    padding: 4px 8px;
-    border-radius: 6px;
-    font-size: 11px;
+.withdraw-request-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(255,255,255,0.1);
+}
+
+.withdraw-request-status {
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 12px;
     font-weight: bold;
-    margin-top: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
-.withdraw-status.completed {
+.withdraw-request-status.completed {
     background: rgba(76, 175, 80, 0.2);
     color: #4CAF50;
     border: 1px solid rgba(76, 175, 80, 0.3);
 }
 
-.withdraw-status.processing {
+.withdraw-request-status.processing {
     background: rgba(33, 150, 243, 0.2);
     color: #2196F3;
     border: 1px solid rgba(33, 150, 243, 0.3);
 }
 
-.withdraw-status.pending {
+.withdraw-request-status.pending {
     background: rgba(255, 167, 38, 0.2);
     color: #FFA726;
     border: 1px solid rgba(255, 167, 38, 0.3);
 }
 
-.withdraw-time {
+.withdraw-request-time {
     color: #888;
-    text-align: right;
-    font-size: 10px;
-    grid-column: 1 / -1;
-    margin-top: 4px;
+    font-size: 12px;
+    font-weight: 500;
 }
 
 /* ===== СПИСКИ ===== */
@@ -563,7 +622,7 @@ h1 {
     .stats-grid, .ref-stats { grid-template-columns: 1fr; gap: 10px; }
     .balance-card h2 { font-size: 32px; }
     .btn { padding: 12px 15px; font-size: 14px; }
-    .investor-row, .withdraw-row { padding: 10px; }
+    .investor-row, .withdraw-request-card { padding: 10px; }
 }
 
 /* ===== SCROLLBAR STYLING ===== */
