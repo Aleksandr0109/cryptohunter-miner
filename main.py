@@ -20,6 +20,7 @@ from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 from aiogram.fsm.storage.memory import MemoryStorage
+from sqlalchemy import text
 
 from config import BOT_TOKEN, BOT_USERNAME
 from bot.handlers import router
@@ -311,7 +312,8 @@ async def start_bot():
 async def hourly_accrual():
     try:
         async with AsyncSessionLocal() as db:
-            result = await db.execute("SELECT * FROM users")
+            # ИСПРАВЛЕНО: обернули SQL запрос в text()
+            result = await db.execute(text("SELECT * FROM users"))
             users = result.scalars().all()
             from decimal import Decimal
             for user in users:
