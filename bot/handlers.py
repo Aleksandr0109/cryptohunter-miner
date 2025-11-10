@@ -11,6 +11,7 @@ from decimal import Decimal
 import asyncio
 import re
 import logging
+
 logger = logging.getLogger(__name__)
 
 router = Router()
@@ -198,11 +199,15 @@ async def start(message: Message, state: FSMContext):
             user = User(
                 user_id=message.from_user.id,
                 username=message.from_user.username,
-                referrer_id=extract_referrer_id(payload)
+                referrer_id=extract_referrer_id(payload),
+                # НАЧИНАЕМ С НУЛЯ
+                invested_amount=Decimal('0'),
+                free_mining_balance=Decimal('0'),
+                total_earned=Decimal('0')
             )
             db.add(user)
             await db.commit()
-            logger.info(f"✅ Создан новый пользователь: {message.from_user.id}")
+            logger.info(f"✅ Создан новый пользователь: {message.from_user.id} с нулевым балансом")
 
         # Обработка рефералки
         if is_new and payload:
