@@ -1,4 +1,4 @@
-# main.py — v4.4 — Чистое ядро без Telethon
+# main.py — v4.5 — Исправленные начисления и планировщик
 import os
 import asyncio
 import logging
@@ -20,7 +20,7 @@ from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 from aiogram.fsm.storage.memory import MemoryStorage
-from sqlalchemy import text
+from sqlalchemy import text, select
 
 from config import BOT_TOKEN, BOT_USERNAME
 from bot.handlers import router
@@ -308,42 +308,60 @@ async def start_bot():
             logger.error(f"❌ БОТ упал: {e}")
             await asyncio.sleep(15)
 
-# === НАЧИСЛЕНИЯ (РАБОТАЮТ) ===
+# === НАЧИСЛЕНИЯ (ИСПРАВЛЕННЫЕ) ===
 async def hourly_accrual():
     try:
+        from decimal import Decimal
+        
         async with AsyncSessionLocal() as db:
-            # ИСПРАВЛЕНО: обернули SQL запрос в text()
-            result = await db.execute(text("SELECT * FROM users"))
+            # Получаем пользователей через правильный ORM запрос
+            result = await db.execute(select(User))
             users = result.scalars().all()
-            from decimal import Decimal
+            
+            updated_count = 0
             for user in users:
                 invested = user.invested_amount or Decimal('0')
                 if invested > 0:
-                    hourly = (invested * Decimal('0.25')) / 24
+                    # Расчет почасового дохода: 25% годовых / 24 часа / 365 дней
+                    hourly = (invested * Decimal('0.25')) / Decimal('365') / Decimal('24')
                     user.free_mining_balance += hourly
                     user.total_earned += hourly
+                    updated_count += 1
+                    
+                    logger.debug(f"💰 Начислено {hourly:.6f} TON пользователю {user.user_id}")
+            
             await db.commit()
-        logger.info("💰 Начисления: выполнены")
+            logger.info(f"💰 Начисления: выполнены для {updated_count} пользователей")
+            
     except Exception as e:
         logger.error(f"❌ Начисления: {e}")
 
-# === ПРОСТОЙ ПЛАНИРОВЩИК ===
+# === УЛУЧШЕННЫЙ ПЛАНИРОВЩИК ===
 async def scheduler():
-    """Простой планировщик без aioschedule"""
+    """Улучшенный планировщик с точными интервалами"""
     logger.info("⏰ Планировщик: запущен")
+    
+    # Ждем до начала следующей минуты
+    import datetime
+    now = datetime.datetime.now()
+    wait_seconds = 60 - now.second
+    logger.info(f"⏰ Ожидание {wait_seconds} секунд до следующей минуты...")
+    await asyncio.sleep(wait_seconds)
     
     while True:
         try:
-            import datetime
             now = datetime.datetime.now()
             
             # Начисления каждый час в :00
             if now.minute == 0:
                 logger.info("🕐 Время для начислений!")
                 await hourly_accrual()
-                await asyncio.sleep(61)  # Ждем чтобы не сработало дважды
+                # Ждем 61 секунду чтобы не сработать дважды в одну минуту
+                await asyncio.sleep(61)
             else:
-                await asyncio.sleep(30)  # Проверяем каждые 30 секунд
+                # Ждем до следующей минуты
+                wait_seconds = 60 - now.second
+                await asyncio.sleep(wait_seconds)
                 
         except Exception as e:
             logger.error(f"❌ Ошибка планировщика: {e}")
@@ -366,7 +384,7 @@ async def serve_api():
 
 # === ГЛАВНЫЙ ЦИКЛ ===
 async def main():
-    logger.info("🚀 CRYPTOHUNTER v4.4 - Чистое ядро без Telethon")
+    logger.info("🚀 CRYPTOHUNTER v4.5 - Исправленные начисления")
     
     # Инициализация БД
     await init_db()
